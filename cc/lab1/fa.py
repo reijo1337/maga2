@@ -4,7 +4,7 @@ from fa_state import State
 class Automata(object):
     """Represents the Non-deterministic Finite Automata."""
 
-    def __init__(self, startState, endState):
+    def __init__(self, startState):
         """
 		Initialise the NFA with start and terminating state.
 		Params:
@@ -12,11 +12,10 @@ class Automata(object):
 			endState: ending state of the NFA
 		"""
 
-        if not (isinstance(startState, State) and isinstance(endState, State)):
+        if not isinstance(startState, State):
             raise ValueError("Invalid parameters passed")
 
         self.startState = startState
-        self.endState = endState
 
     def matches(self, string):
         """

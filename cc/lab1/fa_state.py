@@ -1,7 +1,7 @@
 class State(object):
     """Represents the state/node in a Non-deterministic Finite Automata."""
 
-    def __init__(self, isFinalState=False):
+    def __init__(self, positions, isFinalState=False):
         """
         Initialise the state type and transition arrays.
         Params:
@@ -11,6 +11,7 @@ class State(object):
         self._charRangeMin = 0
         self._charRangeMax = 255
 
+        self.positions = positions
         self.isFinalState = isFinalState
         self.charTransitions = [[] for _ in range(self._charRangeMax)]
         self.epsilonTransitions = list()
@@ -85,14 +86,16 @@ class State(object):
         for ch in string:
             charMoves = set()
             for state in epsMoves:
-                if state.isFinalState: continue
+                if state.isFinalState:
+                    continue
                 for move in state.getTransitionsForChar(ch):
                     charMoves.add(move)
 
             epsMoves = self.getEpsReachabilityForStates(charMoves)
 
         for state in epsMoves:
-            if state.isFinalState: return True
+            if state.isFinalState:
+                return True
 
         return False
 

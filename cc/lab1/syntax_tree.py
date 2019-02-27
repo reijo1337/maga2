@@ -222,3 +222,17 @@ def get_followpos(root_tree):
 def build_tree(reg):
     reg_list = convert_regex_to_list(reg)
     return get_sum(reg_list)
+
+
+def get_char_positions(root, char):
+    """
+    :param positions: list
+    :param char: str
+    :type root: Tree
+    """
+    ret = list()
+    if root is None:
+        return ret
+    ret.extend(get_char_positions(root.left, char))
+    ret.extend(get_char_positions(root.right, char))
+    return ret
