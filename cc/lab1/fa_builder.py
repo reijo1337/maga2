@@ -22,6 +22,8 @@ def build_for_regexp(regexp):
     followpos_dict = st.get_followpos(tree)
     # Определить q0 = firstpos(root), где root - корень синтаксического дерева.
     q0 = State(positions=st.firstpos(tree))
+    print(f'Начальное состояние: {q0}')
+    print('Добавляем q0 в Q как непомеченное')
     # Добавить q0 в Q как непомеченное состояние
     Q['unmarked'].append(q0)
 
@@ -34,9 +36,11 @@ def build_for_regexp(regexp):
         R: State = Q['unmarked'].pop(0)
         Q['marked'].append(R)
 
+        print(f'Берем непомеченное состояние {R} и помечаем его')
+
         # for (каждого входного символа a  T , такого, что в R имеется позиция, которой соответствует a)
         for char in char_position.keys():
-            p: set = R.positions.intersetion(set(char_position[char]))
+            p: set = R.positions.intersection(set(char_position[char]))
             # пусть символ a в R соответствует позициям p1, ..., pn
             if len(p) != 0:
                 # и пусть S =  1<i<n followpos(pi)
@@ -47,7 +51,7 @@ def build_for_regexp(regexp):
                 if len(S_set) != 0:
                     S = State(positions=S_set)
                     # if (SQ)
-                    if S not in Q['marked'] and S not in Q['unmarked']:
+                    if not state_in_Q(Q, S):
                         # добавить S в Q как непомеченное состояние
                         Q['unmarked'].append(S)
                     # определить D(R, a) = S;
@@ -60,3 +64,18 @@ def build_for_regexp(regexp):
             state.isFinalState = True
 
     return Automata(q0)
+
+
+def state_in_Q(Q, state):
+    """
+    Корректная проверка нахождения сотояния в множестве состояний
+    :param Q: множество состояний
+    :param state: проверяемое состояние
+    """
+    for s in Q['marked']:
+        if s.positions == state.positions:
+            return True
+    for s in Q['unmarked']:
+        if s.positions == state.positions:
+            return True
+    return False

@@ -6,6 +6,7 @@ class State(object):
         Initialise the state type and transition arrays.
         Params:
             isFinalState: True if this is final state state, False otherwise
+            :type positions: set
         """
 
         self._charRangeMin = 0
@@ -15,6 +16,9 @@ class State(object):
         self.isFinalState = isFinalState
         self.charTransitions = [[] for _ in range(self._charRangeMax)]
         self.epsilonTransitions = list()
+
+    def __str__(self):
+        return str(self.positions)
 
     def isSupportedChar(self, character):
         """

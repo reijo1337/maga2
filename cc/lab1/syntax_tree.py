@@ -233,6 +233,8 @@ def get_char_positions(root, char):
     ret = list()
     if root is None:
         return ret
+    if root.cargo == char:
+        ret.append(root.pos)
     ret.extend(get_char_positions(root.left, char))
     ret.extend(get_char_positions(root.right, char))
     return ret
