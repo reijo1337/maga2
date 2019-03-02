@@ -51,7 +51,8 @@ def build_for_regexp(regexp):
                 if len(S_set) != 0:
                     S = State(positions=S_set)
                     # if (SQ)
-                    if not state_in_Q(Q, S):
+                    in_Q, S = state_in_Q(Q, S)
+                    if not in_Q:
                         # добавить S в Q как непомеченное состояние
                         Q['unmarked'].append(S)
                     # определить D(R, a) = S;
@@ -74,8 +75,10 @@ def state_in_Q(Q, state):
     """
     for s in Q['marked']:
         if s.positions == state.positions:
-            return True
+            del state
+            return True, s
     for s in Q['unmarked']:
         if s.positions == state.positions:
-            return True
-    return False
+            del state
+            return True, s
+    return False, state

@@ -9,12 +9,14 @@ class State(object):
             :type positions: set
         """
 
-        self._charRangeMin = 0
-        self._charRangeMax = 255
+        self.charRangeMin = 97
+        self._charRangeMax = 122
 
         self.positions = positions
         self.isFinalState = isFinalState
-        self.charTransitions = [[] for _ in range(self._charRangeMax)]
+        self.charTransitions = []
+        for _ in range(self._charRangeMax + 1):
+            self.charTransitions.append(None)
         self.epsilonTransitions = list()
 
     def __str__(self):
@@ -35,7 +37,7 @@ class State(object):
         if len(character) == 0:
             return True
 
-        return self._charRangeMin <= ord(character) <= self._charRangeMax
+        return self.charRangeMin <= ord(character) <= self._charRangeMax
 
     def moveOnChar(self, character, destinationState):
         """
@@ -53,7 +55,7 @@ class State(object):
             raise ValueError("Character symbol is invalid")
 
         charAsciiValue = ord(character)
-        self.charTransitions[charAsciiValue].append(destinationState)
+        self.charTransitions[charAsciiValue] = destinationState
 
     def moveOnEpsilon(self, destinationState):
         """

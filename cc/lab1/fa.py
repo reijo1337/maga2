@@ -1,5 +1,6 @@
 from fa_state import State
 from graphviz import Digraph
+import numpy as np
 
 
 class Automata(object):
@@ -27,35 +28,56 @@ class Automata(object):
 
         return self.startState and self.startState.matches(string)
 
-    def visualize(self):
+    def visualize(self, filename):
         """
         Визуализация ДКА с помощью graphviz
         """
         fa_graph = Digraph('finite_state_machine', filename='fa.gv')
-        self.___visualize_final_states__(fa_graph, self.startState)
+        states = self.states()
+        fa_graph.attr('node', shape='doublecircle')
+        for state in states:
+            if state.isFinalState:
+                fa_graph.node(str(state))
         fa_graph.attr('node', shape='circle')
         fa_graph.edge('START', str(self.startState))
-        self.__visualize_state__(fa_graph, self.startState)
-        fa_graph.view()
+        for state in states:
+            for code, char_transition in enumerate(state.charTransitions):
+                if char_transition is not None:
+                    # code = state.charTransitions.index(char_transition)
+                    fa_graph.edge(str(state), str(char_transition), label=chr(code))
+        fa_graph.view(filename=filename)
 
-    def __visualize_state__(self, graph, state):
+    def states(self):
         """
-        Добавление в визуализацию состояния и всех переходов из него
-        :type state: State
-        :type graph: Digraph
+        Возвращает список состояний автомата
+        :return: список состояний
         """
-        for char_transition in state.charTransitions:
-            if len(char_transition) != 0:
-                code = state.charTransitions.index(char_transition)
-                for dest_state in char_transition:
-                    graph.edge(str(state), str(dest_state), label=chr(code))
-                    self.__visualize_state__(graph, dest_state)
+        visited = list()
+        state_stack = list()
+        state_stack.append(self.startState)
+        while len(state_stack) != 0:
+            state = state_stack.pop(len(state_stack) - 1)
+            if state not in visited:
+                visited.append(state)
+                for destinations in state.charTransitions:
+                    if destinations is not None and destinations not in visited:
+                        state_stack.append(destinations)
+        return visited
 
-    def ___visualize_final_states__(self, graph, state):
-        graph.attr('node', shape='doublecircle')
-        if state.isFinalState:
-            graph.node(str(state))
-        for char_transition in state.charTransitions:
-            if len(char_transition) != 0:
-                for dest_state in char_transition:
-                    self.___visualize_final_states__(graph, dest_state)
+    def reverseEdgesTable(self):
+        states = self.states()
+        alph = "abcdefghijklmnopqrstuvwxyz"
+        size = len(states)
+        # Таблица переходов. Строка - входное состояние, столбец - выходное
+        sigma = np.zeros((size+1, size+1), dtype=str)
+        for num, state in enumerate(states):
+            for code, destiantions in enumerate(state.charTransitions):
+                if len(destiantions) != 0:
+                    if chr(code) in alph:
+                        alph = alph.replace(chr(code), '')
+                    for dest in destiantions:
+                        dest_index = states.index(dest)
+                        sigma[dest_index+1][num+1] = chr(code)
+        for i in range(1, size + 1):
+            sigma[0][i] = alph
+        return sigma
