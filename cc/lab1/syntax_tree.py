@@ -123,10 +123,10 @@ def get_sum(token_list):
 def get_iter(token_list):
     a = get_char(token_list)
     if get_token(token_list, '*'):
-        b = get_sum(token_list)
+        b = get_char(token_list)
         return Tree('*', b, a)
     elif get_token(token_list, '+'):
-        b = get_sum(token_list)
+        b = get_char(token_list)
         return Tree('.', b, Tree('*', b, a))
     else:
         return a
@@ -249,20 +249,20 @@ def get_char_positions(root, char):
     return ret
 
 
-def visualize_tree_node(root, fa_graph, level = 0):
+def visualize_tree_node(root, fa_graph, level = 0, head_name = None):
     """
     :type root: Tree
     """
-    root_str = f'{root}_{level}'
+    root_str = f'{root}_{level}' if head_name is None else f'({head_name})_{root}_{level}'
     fa_graph.node(root_str)
     if root.left is not None:
-        left_str = f'{root.left}_{level+1}'
+        left_str = f'({root_str})_{root.left}_{level+1}'
         fa_graph.edge(root_str, left_str)
-        visualize_tree_node(root.left, fa_graph, level+1)
+        visualize_tree_node(root.left, fa_graph, level+1, root_str)
     if root.right is not None:
-        right_str = f'{root.right}_{level+1}'
+        right_str = f'({root_str})_{root.right}_{level+1}'
         fa_graph.edge(root_str, right_str)
-        visualize_tree_node(root.right, fa_graph, level+1)
+        visualize_tree_node(root.right, fa_graph, level+1, root_str)
 
 
 def visualize_tree(root, filename):
