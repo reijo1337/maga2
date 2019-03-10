@@ -18,6 +18,7 @@ def build_for_regexp(regexp):
 
     # Построить синтаксическое дерево для пополненного регулярного выражения (r)#
     tree = st.build_tree(regexp)
+    st.visualize_tree(tree, regexp)
     # Обходя синтаксическое дерево, вычислить значения функций nullable, firstpos, lastpos и followpos.
     followpos_dict = st.get_followpos(tree)
     # Определить q0 = firstpos(root), где root - корень синтаксического дерева.

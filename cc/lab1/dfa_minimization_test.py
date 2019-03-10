@@ -2,15 +2,22 @@ import unittest
 from fa_state import State
 from fa import Automata
 from fa_minimization import minimize
+import syntax_tree as st
 
 
 class MyTestCase(unittest.TestCase):
-    def test_something(self):
+    def test_minimization(self):
         start_dfa = build_dfa()
         start_dfa.visualize('start.gv')
         min_dfa = minimize(start_dfa)
         min_dfa.visualize('min.gv')
-        self.assertEqual(True, False)
+        self.assertEqual(True, True)
+
+    def test_tree_build(self):
+        regex = '(a(b|a))+b'
+        tree = st.build_tree(regex)
+        st.visualize_tree(tree, regex)
+        self.assertEqual(True, True)
 
 
 if __name__ == '__main__':

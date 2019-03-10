@@ -1,7 +1,10 @@
+from graphviz import Digraph
+
+
 CHAR_EMPTY = chr(1)
 CHAR_ENDMARK = '#'
 available_chars = 'abcdefghijklmnopqrstuvwxyz'
-operands = '()*|.'
+operands = '()*|.+'
 position = 1
 
 
@@ -43,20 +46,21 @@ def convert_regex_to_list(regex):
         raise ValueError(f'Регулярное выражение должно быть строкой, а оно типа {type(regex)}')
     ret = list()
     prev = ''
-    need_dot = available_chars + '*'
+    need_dot = available_chars + '*+'
     for ch in regex:
         if ch not in available_chars + operands:
             raise ValueError(
                 f'Регулярное выражение должно содержать только буквы и символы \'(,),*,|\'. Есть символ {ch}')
         if ch in available_chars:
             position = position + 1
-        if prev in need_dot and ch in available_chars:
+        if prev in need_dot and ch in available_chars + '(':
             ret.append('.')
         ret.append(ch)
         prev = ch
     ret.append('.')
     ret.append(CHAR_ENDMARK)
     position = position + 1
+    ret = ret[1:] if ret[0] == '.' else ret
     ret.reverse()
     return ret
 
@@ -121,6 +125,9 @@ def get_iter(token_list):
     if get_token(token_list, '*'):
         b = get_sum(token_list)
         return Tree('*', b, a)
+    elif get_token(token_list, '+'):
+        b = get_sum(token_list)
+        return Tree('.', b, Tree('*', b, a))
     else:
         return a
 
@@ -139,6 +146,8 @@ def nullable(node):
         return nullable(node.left) and nullable(node.right)
     elif node.cargo == '*':
         return True
+    elif node.cargo == '+':
+        return False
 
 
 def firstpos(node):
@@ -155,7 +164,7 @@ def firstpos(node):
         if nullable(node.left):
             return firstpos(node.left) | firstpos(node.right)
         return firstpos(node.left)
-    elif node.cargo == '*':
+    elif node.cargo in '*+':
         return firstpos(node.left)
 
 
@@ -173,7 +182,7 @@ def lastpos(node):
         if nullable(node.right):
             return lastpos(node.left) | lastpos(node.right)
         return lastpos(node.right)
-    elif node.cargo == '*':
+    elif node.cargo in '*+':
         return lastpos(node.left)
 
 
@@ -238,3 +247,25 @@ def get_char_positions(root, char):
     ret.extend(get_char_positions(root.left, char))
     ret.extend(get_char_positions(root.right, char))
     return ret
+
+
+def visualize_tree_node(root, fa_graph, level = 0):
+    """
+    :type root: Tree
+    """
+    root_str = f'{root}_{level}'
+    fa_graph.node(root_str)
+    if root.left is not None:
+        left_str = f'{root.left}_{level+1}'
+        fa_graph.edge(root_str, left_str)
+        visualize_tree_node(root.left, fa_graph, level+1)
+    if root.right is not None:
+        right_str = f'{root.right}_{level+1}'
+        fa_graph.edge(root_str, right_str)
+        visualize_tree_node(root.right, fa_graph, level+1)
+
+
+def visualize_tree(root, filename):
+    fa_graph = Digraph('finite_state_machine')
+    visualize_tree_node(root, fa_graph)
+    fa_graph.view(filename=filename)

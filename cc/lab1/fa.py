@@ -32,7 +32,7 @@ class Automata(object):
         """
         Визуализация ДКА с помощью graphviz
         """
-        fa_graph = Digraph('finite_state_machine', filename='fa.gv')
+        fa_graph = Digraph('finite_state_machine')
         states = self.states()
         fa_graph.attr('node', shape='doublecircle')
         for state in states:
@@ -81,3 +81,23 @@ class Automata(object):
         for i in range(1, size + 1):
             sigma[0][i] = alph
         return sigma
+
+    def check(self, check_string):
+        """
+        Проверка строки на соответсвие исходному регулярному выражению
+        :type check_string: str
+        """
+        print(f'Исходная строка: {check_string}')
+        current_state = self.startState
+        for c in check_string:
+            next_state = current_state.getTransitionsForChar(c)
+            if next_state is not None:
+                print(f'Текущее состояние: {str(current_state)}. Переход по букве {c} в состояние {str(next_state)}')
+                current_state = next_state
+            else:
+                print(f'Текущее состояние: {str(current_state)}. Переход по букве {c} невозможен')
+                break
+        if current_state.isFinalState:
+            print(f'Автомат пришел в конечное состояние {str(current_state)}. Строка подходит')
+        else:
+            print(f'Автомат пришел в не конечное состояние {str(current_state)}. Строка не подходит')
