@@ -5,26 +5,28 @@ from fa_state import State
 import numpy as np
 from disjoint_set import DisjointSet
 
-alph = "abcdefghijklmnopqrstuvwxyz"
+alph = "abcd"
 
 
 def build_table(states, sigma_minus_one):
     n = len(states)
     Q = list()
     marked = np.zeros((n, n), dtype=bool)
+    states.sort(key=State.__str__)
     for i in range(n):
         for j in range(n):
             if not marked[i][j] and states[i].isFinalState != states[j].isFinalState:
-                marked[i][j] = marked[j][i] = True
+                marked[i][j] = True
+                marked[j][i] = True
                 Q.append((i, j))
 
     print(marked)
-
+    # TODO: Допилить это место, от него говной воняет
     while len(Q) != 0:
         u, v = Q.pop(0)
         for c in alph:
             for r in [j for j, val in enumerate(sigma_minus_one[u]) if val == c]:
-                for s in [j for j, val in enumerate(sigma_minus_one[v]) if val == c]:
+                for s in [k for k, vall in enumerate(sigma_minus_one[v]) if vall == c]:
                     if not marked[r][s]:
                         marked[r][s] = marked[s][r] = True
                         Q.append((r, s))

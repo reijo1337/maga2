@@ -1,3 +1,4 @@
+import os
 from graphviz import Digraph
 
 
@@ -103,19 +104,31 @@ def get_char(token_list):
 
 
 def get_product(token_list):
+    # a = get_iter(token_list)
+    # if get_token(token_list, '.'):
+    #     b = get_sum(token_list)
+    #     return Tree('.', b, a)
+    # else:
+    #     return a
     a = get_iter(token_list)
-    if get_token(token_list, '.'):
-        b = get_sum(token_list)
-        return Tree('.', b, a)
+    if get_token(token_list, '|'):
+        b = get_char(token_list)
+        return Tree('|', b, a)
     else:
         return a
 
 
 def get_sum(token_list):
+    # a = get_product(token_list)
+    # if get_token(token_list, '|'):
+    #     b = get_sum(token_list)
+    #     return Tree('|', b, a)
+    # else:
+    #     return a
     a = get_product(token_list)
-    if get_token(token_list, '|'):
+    if get_token(token_list, '.'):
         b = get_sum(token_list)
-        return Tree('|', b, a)
+        return Tree('.', b, a)
     else:
         return a
 
@@ -254,7 +267,7 @@ def visualize_tree_node(root, fa_graph, level = 0, head_name = None):
     :type root: Tree
     """
     root_str = f'{root}_{level}' if head_name is None else f'({head_name})_{root}_{level}'
-    fa_graph.node(root_str)
+    fa_graph.node(name=root_str, label=str(root))
     if root.left is not None:
         left_str = f'({root_str})_{root.left}_{level+1}'
         fa_graph.edge(root_str, left_str)
@@ -268,4 +281,4 @@ def visualize_tree_node(root, fa_graph, level = 0, head_name = None):
 def visualize_tree(root, filename):
     fa_graph = Digraph('finite_state_machine')
     visualize_tree_node(root, fa_graph)
-    fa_graph.view(filename=filename)
+    fa_graph.view('regexp_tree')

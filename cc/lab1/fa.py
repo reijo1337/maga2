@@ -72,12 +72,12 @@ class Automata(object):
         sigma = np.zeros((size+1, size+1), dtype=str)
         for num, state in enumerate(states):
             for code, destiantions in enumerate(state.charTransitions):
-                if len(destiantions) != 0:
+                if destiantions is not None:
                     if chr(code) in alph:
                         alph = alph.replace(chr(code), '')
-                    for dest in destiantions:
-                        dest_index = states.index(dest)
-                        sigma[dest_index+1][num+1] = chr(code)
+                    dest = destiantions
+                    dest_index = states.index(dest)
+                    sigma[dest_index+1][num+1] = chr(code)
         for i in range(1, size + 1):
             sigma[0][i] = alph
         return sigma

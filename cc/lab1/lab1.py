@@ -1,10 +1,10 @@
 from fa_builder import build_for_regexp
-from fa_minimization import minimize
+from fa_minimization import minimize, minimization
 
 
 def main():
     # regexp = str(input('Введите регулярное выражение: '))
-    regexp = 'ccc(a|b)+c'
+    regexp = 'ccc(ab|ab)+c*'
     print(f'Регулярное выражение: {regexp}')
     print('Строим ДКА по регулярному выражению')
     FA = build_for_regexp(regexp)
@@ -12,10 +12,10 @@ def main():
     for state in states:
         print(state)
     print('Визуализируем ДКА')
-    FA.visualize('original_fa.gv')
+    FA.visualize('original_fa')
     print('Минимизация ДКА и визуализация')
-    min_fa = minimize(FA)
-    min_fa.visualize('min_fa.gv')
+    min_fa = minimization(FA)
+    min_fa.visualize('min_fa')
     check1 = 'ababaabb'
     print(f'Проверка строки {check1}')
     min_fa.check(check1)
