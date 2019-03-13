@@ -62,24 +62,43 @@ class Automata(object):
                 for destinations in state.charTransitions:
                     if destinations is not None and destinations not in visited:
                         state_stack.append(destinations)
+        visited.sort(key=State.__str__)
         return visited
 
-    def reverseEdgesTable(self):
+    def alphabet(self):
+        alph = ''
         states = self.states()
-        alph = "abcdefghijklmnopqrstuvwxyz"
+        for state in states:
+            for code, dest in enumerate(state.charTransitions):
+                if code >= state.charRangeMin and dest is not None:
+                    if chr(code) not in alph:
+                        alph = alph + chr(code)
+        return alph
+
+    def reverse_edges_table(self):
+        states = self.states()
+        alph = self.alphabet()
+        states.insert(0, State({0}))
+        for i in range(1, len(states)):
+            state = states[i]
+            for char in alph:
+                if state.charTransitions[ord(char)] is None:
+                    state.moveOnChar(char, states[0])
         size = len(states)
         # Таблица переходов. Строка - входное состояние, столбец - выходное
-        sigma = np.zeros((size+1, size+1), dtype=str)
+        sigma = np.chararray((size, size), itemsize=len(alph) + 1)
+        sigma[:] = b'0'
         for num, state in enumerate(states):
             for code, destiantions in enumerate(state.charTransitions):
                 if destiantions is not None:
-                    if chr(code) in alph:
-                        alph = alph.replace(chr(code), '')
+                    # if chr(code) in alph:
+                    #     alph = alph.replace(chr(code), '')
                     dest = destiantions
                     dest_index = states.index(dest)
-                    sigma[dest_index+1][num+1] = chr(code)
-        for i in range(1, size + 1):
-            sigma[0][i] = alph
+                    new = sigma[dest_index][num].decode('utf-8') + chr(code)
+                    sigma[dest_index][num] = new
+        # for i in range(1, size + 1):
+        #     sigma[0][i] = alph
         return sigma
 
     def check(self, check_string):

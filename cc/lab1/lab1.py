@@ -1,5 +1,5 @@
 from fa_builder import build_for_regexp
-from fa_minimization import minimize, minimization
+from fa_minimization import minimization
 
 
 def main():
