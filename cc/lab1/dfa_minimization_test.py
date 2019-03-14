@@ -6,13 +6,6 @@ import syntax_tree as st
 
 
 class MyTestCase(unittest.TestCase):
-    def test_minimization(self):
-        start_dfa = build_dfa()
-        start_dfa.visualize('start.gv')
-        min_dfa = minimize(start_dfa)
-        min_dfa.visualize('min.gv')
-        self.assertEqual(True, True)
-
     def test_tree_build(self):
         regex = '(a(b|a))+b'
         tree = st.build_tree(regex)

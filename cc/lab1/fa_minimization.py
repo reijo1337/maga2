@@ -1,7 +1,6 @@
 from fa import Automata
 from fa_state import State
 import numpy as np
-from disjoint_set import DisjointSet
 
 
 def build_table(states, sigma_minus_one, alph):
@@ -16,7 +15,6 @@ def build_table(states, sigma_minus_one, alph):
                 Q.append((i, j))
 
     print(marked)
-    # TODO: Допилить это место, от него говной воняет
     while len(Q) != 0:
         u, v = Q.pop(0)
         for c in alph:
@@ -66,106 +64,32 @@ def minimization(dfa):
                 if not marked[i][j]:
                     component[j] = components_count
     print(component)
+    return build_min_dfa(component, states, dfa.startState)
 
 
-def minimize(dfa):
+def build_min_dfa(component, states, start_state):
     """
-	Минимизация ДКА
-	:type dfa: Automata
-	"""
-    pass
-#
-#     global state, start_state
-#
-#     def order_tuple(a, b):
-#         """
-#         :type b: State
-#         :type a: State
-#         """
-#         return (a, b) if list(a.positions) < list(b.positions) else (b, a)
-#
-#     table = {}
-#
-#     def state_key(state):
-#         return list(state.positions)
-#
-#     sorted_states = sorted(dfa.states(), key=state_key)
-#     final_states = list()
-#
-#     for state in sorted_states:
-#         if state.isFinalState:
-#             final_states.append(state)
-#     for i, item in enumerate(sorted_states):
-#         for item_2 in sorted_states[i + 1:]:
-#             table[(item, item_2)] = (item in final_states) != (item_2 in final_states)
-#
-#     flag = True
-#     # table filling method
-#     while flag:
-#         flag = False
-#
-#         for i, item in enumerate(sorted_states):
-#             for item_2 in sorted_states[i + 1:]:
-#
-#                 if table[(item, item_2)]:
-#                     continue
-#
-#                 # check if the states are distinguishable
-#                 for w in alph:
-#                     t1_list = item.charTransitions[ord(w)]
-#                     t2_list = item_2.charTransitions[ord(w)]
-#
-#                     if t1_list is not None and t2_list is not None and t1_list != t2_list:
-#                         marked = table[order_tuple(t1_list, t2_list)]
-#                         flag = flag or marked
-#                         table[(item, item_2)] = marked
-#
-#                         if marked:
-#                             break
-#
-#     d = DisjointSet(dfa.states())
-#     for k, v in table.items():
-#         if not v:
-#             d.union(k[0], k[1])
-#     states = []
-#     orig_states = dfa.states()
-#     start_state = State({0})
-#     # Строим новые состояния КА
-#     for set_states in d.get():
-#         f = False
-#         for al in states:
-#             if al.positions == d.find_set(set_states[0]):
-#                 state = al
-#                 f = True
-#                 break
-#         if not f:
-#             state = State(d.find_set(set_states[0]))
-#             states.append(state)
-#         # Если получили начальное состояние
-#         if dfa.startState in set_states:
-#             start_state = state
-#         # Если получили конечное состояние
-#         for item in set_states:
-#             if item in final_states:
-#                 state.isFinalState = True
-#                 break
-#         # Перенос переходов
-#         for item in set_states:
-#             for orig_state in orig_states:
-#                 # Нашли состояние, которое легло в основу нового
-#                 if item == orig_state:
-#                     # Перенос переходов со старого состояния на новое
-#                     for char_code, orig_dest_states in enumerate(orig_state.charTransitions):
-#                         if orig_dest_states is not None:
-#                             # Находим новое состояние, в которое нужно построить переход
-#                             finded = False
-#                             for new_state in states:
-#                                 if orig_dest_states.positions in new_state.positions:
-#                                     state.moveOnChar(chr(char_code), new_state)
-#                                     finded = True
-#                             # Если нового состояния еще нет, то надо его создать
-#                             if not finded:
-#                                 dest_state = State(d.find_set(orig_dest_states))
-#                                 state.moveOnChar(chr(char_code), dest_state)
-#                                 states.append(dest_state)
-#     return Automata(startState=start_state)
+
+    :param component: list
+    :type states: list
+    """
+    global start
+    count_of_states = max(component)
+    groups = [State({i}) for i in range(count_of_states)]
+    component.pop(0)
+    states.pop(0)
+    for i, state in enumerate(states):
+        new_state_index = component[i] - 1
+        new_state = groups[new_state_index]
+        if state.isFinalState:
+            new_state.isFinalState = True
+        if state == start_state:
+            start = new_state
+        for code, dest in enumerate(state.charTransitions):
+            if dest is not None and dest.positions != {0}:
+                j = states.index(dest)
+                new_dest_index = component[j] - 1
+                new_dest = groups[new_dest_index]
+                new_state.moveOnChar(chr(code), new_dest)
+
+    return Automata(start)
