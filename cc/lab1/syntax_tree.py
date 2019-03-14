@@ -1,4 +1,3 @@
-import os
 from graphviz import Digraph
 
 
