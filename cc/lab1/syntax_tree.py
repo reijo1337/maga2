@@ -269,13 +269,13 @@ def visualize_tree_node(root, fa_graph, level = 0, head_name = None):
     root_str = f'{root}_{level}' if head_name is None else f'({head_name})_{root}_{level}'
     fa_graph.node(name=root_str, label=str(root))
     if root.left is not None:
-        left_str = f'({root_str})_{root.left}_{level+1}'
+        left_str = f'{root.left}_{level+1}'
         fa_graph.edge(root_str, left_str)
-        visualize_tree_node(root.left, fa_graph, level+1, root_str)
+        visualize_tree_node(root.left, fa_graph, level+1)
     if root.right is not None:
-        right_str = f'({root_str})_{root.right}_{level+1}'
+        right_str = f'{root.right}_{level+1}'
         fa_graph.edge(root_str, right_str)
-        visualize_tree_node(root.right, fa_graph, level+1, root_str)
+        visualize_tree_node(root.right, fa_graph, level+1)
 
 
 def visualize_tree(root, filename):

@@ -79,7 +79,7 @@ class Automata(object):
         states = self.states()
         alph = self.alphabet()
         states.insert(0, State({0}))
-        for i in range(1, len(states)):
+        for i in range(len(states)):
             state = states[i]
             for char in alph:
                 if state.charTransitions[ord(char)] is None:

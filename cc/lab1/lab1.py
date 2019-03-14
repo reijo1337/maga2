@@ -4,7 +4,7 @@ from fa_minimization import minimization
 
 def main():
     # regexp = str(input('Введите регулярное выражение: '))
-    regexp = 'ccc(ab|ab)+c*'
+    regexp = 'ccc(ab|ab)+'
     print(f'Регулярное выражение: {regexp}')
     print('Строим ДКА по регулярному выражению')
     FA = build_for_regexp(regexp)
