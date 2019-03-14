@@ -3,8 +3,8 @@ from fa_minimization import minimization
 
 
 def main():
-    # regexp = str(input('Введите регулярное выражение: '))
-    regexp = 'ccc(ab|ab)+'
+    regexp = str(input('Введите регулярное выражение: '))
+    # regexp = 'ccc(ab|ab)+'
     print(f'Регулярное выражение: {regexp}')
     print('Строим ДКА по регулярному выражению')
     FA = build_for_regexp(regexp)
@@ -16,7 +16,8 @@ def main():
     print('Минимизация ДКА и визуализация')
     min_fa = minimization(FA)
     min_fa.visualize('min_fa')
-    check1 = 'ababaabb'
+    check1 = str(input('Введите выражение для проверки: '))
+    # check1 = 'ababaabb'
     print(f'Проверка строки {check1}')
     min_fa.check(check1)
 

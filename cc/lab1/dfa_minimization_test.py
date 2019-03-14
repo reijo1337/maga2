@@ -1,7 +1,9 @@
 import unittest
+
+from fa_builder import build_for_regexp
 from fa_state import State
 from fa import Automata
-from fa_minimization import minimize, minimization
+from fa_minimization import minimization
 import syntax_tree as st
 
 
@@ -17,6 +19,12 @@ class MyTestCase(unittest.TestCase):
         origin_dfa.visualize('origin')
         min_dfa = minimization(origin_dfa)
         min_dfa.visualize('min')
+        self.assertEqual(True, True)
+
+    def test_dfa_builder(self):
+        regexp = '(a|b)*abb'
+        FA = build_for_regexp(regexp)
+        FA.visualize('test_builder')
         self.assertEqual(True, True)
 
 

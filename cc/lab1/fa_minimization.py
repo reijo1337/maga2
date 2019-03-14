@@ -13,7 +13,7 @@ def build_table(states, sigma_minus_one, alph):
                 marked[i][j] = True
                 marked[j][i] = True
                 Q.append((i, j))
-
+    print('Инициализировали таблицу:')
     print(marked)
     while len(Q) != 0:
         u, v = Q.pop(0)
@@ -41,6 +41,7 @@ def minimization(dfa):
     alph = dfa.alphabet()
     states = dfa.states()
     sigma_minus_one = dfa.reverse_edges_table()
+    print('Таблица обратных переходов:')
     print(sigma_minus_one)
     states.insert(0, State(positions={0}))
     states_str = ''
@@ -49,6 +50,7 @@ def minimization(dfa):
     print(f'States: {states_str}')
 
     marked = build_table(states, sigma_minus_one, alph)
+    print('Вычислили таблицу:')
     print(marked)
     component = [-1 for _ in states]
     for i, _ in enumerate(states):
@@ -63,13 +65,15 @@ def minimization(dfa):
             for j in range(i + 1, len(states)):
                 if not marked[i][j]:
                     component[j] = components_count
+    print('Группировка')
     print(component)
     return build_min_dfa(component, states, dfa.startState)
 
 
 def build_min_dfa(component, states, start_state):
     """
-
+    Построение нового минимизированного ДКА
+    :param start_state: State
     :param component: list
     :type states: list
     """
