@@ -1,0 +1,12 @@
+E E1 T T1 F
++ * ( ) a
+8
+E->T E1
+E1->+ T E1
+E1->eps
+T->F T1
+T1->* F T1
+T1->eps
+F->a
+F->( E )
+E
