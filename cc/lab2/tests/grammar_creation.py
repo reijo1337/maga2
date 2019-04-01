@@ -27,10 +27,15 @@ class GrammarCreationCase(unittest.TestCase):
 
     def test_grammar_rec_remove(self):
         a = Grammar()
-        a.load_from_file('../rec_grammar')
+        a.load_from_file('../rec_227')
         remove_left_recursion(a)
-        a.save_to_file('../non_rec_grammar')
-        data = [set(open(i).read().split()) for i in ('../non_rec_grammar', '../non_rec_grammar_check')]
+        a.save_to_file('../non_rec_227')
+        data = [set(open(i).read().split()) for i in ('../non_rec_227', '../non_rec_227_check')]
+        self.assertEqual(data[0], data[1])
+        a.load_from_file('../rec_ifmo')
+        remove_left_recursion(a)
+        a.save_to_file('../non_rec_ifmo')
+        data = [set(open(i).read().split()) for i in ('../non_rec_ifmo', '../non_rec_ifmo_check')]
         self.assertEqual(data[0], data[1])
 
 

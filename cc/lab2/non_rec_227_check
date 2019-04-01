@@ -1,0 +1,11 @@
+A S A1 S1
+a b
+8
+A->S a
+A->S a A1
+A1->a A1
+A1->a
+S1->a b S1
+S1->a b
+S1->a A1 b S1
+S1->a A1 b

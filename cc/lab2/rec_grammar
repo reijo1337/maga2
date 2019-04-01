@@ -1,8 +1,0 @@
-S A
-a b c d
-5
-S->A a
-S->b
-A->A c
-A->S d
-A->eps

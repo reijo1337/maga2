@@ -55,6 +55,10 @@ class Grammar(object):
         Создание грамматики по файлу
         :param filename: имя файла
         """
+        self.non_terminals.clear()
+        self.terminals.clear()
+        self.rules.clear()
+        self.start = ""
         with open(filename) as file:
             non_terminals = file.readline().replace('\n', '').split(' ')
             for non_terminal in non_terminals:

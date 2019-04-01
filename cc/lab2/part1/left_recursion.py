@@ -31,7 +31,7 @@ def remove_left_recursion(grammar):
                     right_part = r.right_part.copy()
                     right_part.extend(rule.right_part[1:])
                     grammar.add_rule(rule.left_part, ' '.join(right_part))
-        # TODO Устранить непосредственную рекурсию среди Ai продукций
+        # Устранить непосредственную рекурсию среди Ai продукций
         # Запишем все правила вывода из A в виде: A→Aα1∣…∣Aαn∣β1∣…∣βm
         recursive_rules = {
             'rec': [],
@@ -49,16 +49,16 @@ def remove_left_recursion(grammar):
             grammar.add_non_terminal(new_non_literal)
             # Заменим правила вывода из A на A→β1A′∣… ∣βmA′∣β1∣…∣βm.
             for rule in recursive_rules['nonrec']:
-                grammar.rules.remove(rule)
-                if rule.right_part[0] != 'eps':
-                    grammar.add_rule(A[i],
-                                     ' '.join(rule.right_part) + ' ' + new_non_literal)
-                else:
-                    grammar.add_rule(A[i], new_non_literal)
-                    grammar.add_rule(new_non_literal, 'eps')
+                grammar.add_rule(A[i],
+                                 ' '.join(rule.right_part) + ' ' + new_non_literal)
+                # else:
+                #     grammar.add_rule(A[i], new_non_literal)
+                #     grammar.add_rule(new_non_literal, 'eps')
 
             # Создадим новый нетерминал A′→α1A′∣…∣αnA′∣α1∣…∣αn.
             for rule in recursive_rules['rec']:
                 grammar.rules.remove(rule)
                 grammar.add_rule(new_non_literal,
                                  ' '.join(rule.right_part[1:]) + ' ' + new_non_literal)
+                grammar.add_rule(new_non_literal,
+                                 ' '.join(rule.right_part[1:]))

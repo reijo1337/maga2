@@ -1,0 +1,7 @@
+A S
+a b y
+4
+A->S a
+S->S b
+S->A y
+S->b

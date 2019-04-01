@@ -1,0 +1,10 @@
+A S S1
+a b y
+7
+A->S a
+S->b
+S->b S1
+S1->b S1
+S1->b
+S1->a y S1
+S1->a y
