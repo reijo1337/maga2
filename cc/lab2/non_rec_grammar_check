@@ -1,0 +1,10 @@
+S A A1
+a b c d
+7
+S->A a
+S->b
+A->A1
+A1->eps
+A->b d A1
+A1->c A1
+A1->a d A1
