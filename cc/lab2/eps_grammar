@@ -1,0 +1,10 @@
+S A B C
+a c d
+6
+S->A B C d
+A->a
+A->eps
+B->A C
+C->c
+C->eps
+S

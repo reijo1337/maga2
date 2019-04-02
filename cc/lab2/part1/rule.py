@@ -34,6 +34,6 @@ class Rule(object):
 
     def has_terminals(self, non_terminals):
         for ch in self.right_part:
-            if ch not in non_terminals:
+            if ch not in non_terminals and ch != 'eps':
                 return True
         return False
