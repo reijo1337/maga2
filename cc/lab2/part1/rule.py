@@ -21,3 +21,19 @@ class Rule(object):
 
     def __hash__(self):
         return hash(self.left_part + '->' + ' '.join(self.right_part))
+
+    def non_terminals_count(self, non_terminals):
+        """
+        Количество нетерминалов в правой части
+        """
+        count = 0
+        for ch in self.right_part:
+            if ch in non_terminals:
+                count = count+1
+        return count
+
+    def has_terminals(self, non_terminals):
+        for ch in self.right_part:
+            if ch not in non_terminals:
+                return True
+        return False
