@@ -1,12 +1,10 @@
 S A B C D D1
 a b c d e z
-9
+7
 S->A a
 A->B b
 B->C c
 C->D d
 C->e
-D->e c b z
 D->e c b z D1
 D1->d c b z D1
-D1->d c b z

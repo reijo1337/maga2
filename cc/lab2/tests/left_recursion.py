@@ -37,6 +37,11 @@ class GrammarCreationCase(unittest.TestCase):
         a.save_to_file('../non_rec_ifmo')
         data = [set(open(i).read().split()) for i in ('../non_rec_ifmo', '../non_rec_ifmo_check')]
         self.assertEqual(data[0], data[1])
+        a.load_from_file('../rec_dragon')
+        remove_left_recursion(a)
+        a.save_to_file('../non_rec_dragon')
+        data = [set(open(i).read().split()) for i in ('../non_rec_dragon', '../non_rec_dragon_check')]
+        self.assertEqual(data[0], data[1])
 
 
 if __name__ == '__main__':
