@@ -1,6 +1,9 @@
-A S
-a b
-3
-A->S a
-A->A a
-S->A b
+S A B C D
+a b c d e z
+6
+S->A a
+A->B b
+B->C c
+C->D d
+C->e
+D->A z
