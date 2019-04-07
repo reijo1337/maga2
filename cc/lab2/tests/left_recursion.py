@@ -43,6 +43,12 @@ class GrammarCreationCase(unittest.TestCase):
         data = [set(open(i).read().split()) for i in ('../non_rec_dragon', '../non_rec_dragon_check')]
         self.assertEqual(data[0], data[1])
 
+    def test_one(self):
+        a = Grammar()
+        a.load_from_file('../rec_227')
+        remove_left_recursion(a)
+        a.save_to_file('../non_rec_227')
+
 
 if __name__ == '__main__':
     unittest.main()
