@@ -89,20 +89,26 @@ class Grammar(object):
                 f.write('\n')
             f.write(self.start)
 
-    def check_rules_for_non_terminal(self, non_terminal, string, i):
+    def check_rules_for_non_terminal(self, non_terminal, string, i, depth = 0):
         """
         Проверка правил для определенного нетерминала
         """
         rules = [r for r in self.rules if r.left_part == non_terminal]
         for rule in rules:
-            if rule.check(string, i, self.non_terminals, self):
+            prefix = ''
+            for tab in range(depth):
+                prefix = prefix + ' '
+            print(prefix + f'Проверка правила {rule}')
+            if rule.check(string, i, self.non_terminals, self, depth + 1):
                 return True
         return False
 
     def check_string(self, inp):
         string = inp.split(' ')
         i = Integer(0)
-        while i.val() < len(string):
-            if not self.check_rules_for_non_terminal(non_terminal=self.start, string=string, i=i):
-                return False
-        return True
+        # while i.val() < len(string):
+        res = self.check_rules_for_non_terminal(non_terminal=self.start, string=string, i=i)
+        if res and i.val() == len(string):
+            return True
+        else:
+            return False

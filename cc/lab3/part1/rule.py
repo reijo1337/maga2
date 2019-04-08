@@ -11,6 +11,12 @@ class Rule(object):
         self.left_part = left_part
         self.right_part = right_part.split(' ')
 
+    def __lt__(self, other):
+        return len(self.right_part) < len(other.right_part)
+
+    def __len__(self):
+        return len(self.right_part)
+
     def __eq__(self, other):
         """
         :type other: Rule
@@ -41,16 +47,26 @@ class Rule(object):
                 return True
         return False
 
-    def check(self, string, i, non_terminals, grammar):
+    def check(self, string, i, non_terminals, grammar, depth=0):
+        original = i.val()
+        prefix = ''
+        for tab in range(depth):
+            prefix = prefix + ' '
         for right in self.right_part:
+            if i.val() == len(string):
+                return True
             if right in non_terminals:
-                if not grammar.check_rules_for_non_terminal(non_terminal=right, string=string, i=i):
+                if not grammar.check_rules_for_non_terminal(non_terminal=right, string=string, i=i, depth=depth):
+                    i.set(original)
                     return False
             elif right == string[i.val()]:
+                print(prefix + f'Успешно обработали симовл {string[i.val()]} при позиции i={i.val()}')
                 i.inc()
-                print(f'Успешно обработали симовл {string[i.val()]} при позиции i={i.val()}')
             else:
-                print(f'Ошибка при i={i.val()} и соотвественном символе {string[i.val()]}')
-                print(f'Правило {self}')
+                print(prefix + f'Ошибка при i={i.val()} и соотвественном символе {string[i.val()]}')
+                print(prefix + f'Правило {self} \n')
+                i.set(original)
                 return False
+        print(prefix + f'Подходит правило {self}\n')
         return True
+

@@ -16,3 +16,6 @@ class Integer(object):
 
     def val(self):
         return self.i
+
+    def set(self, i):
+        self.i = i

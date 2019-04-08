@@ -1,3 +1,5 @@
+import math
+
 from part1.grammar import Grammar
 
 
@@ -62,3 +64,58 @@ def remove_left_recursion(grammar):
                 grammar.rules.remove(rule)
                 grammar.add_rule(new_non_literal,
                                  ' '.join(rule.right_part[1:]) + ' ' + new_non_literal)
+                grammar.add_rule(new_non_literal,
+                                 ' '.join(rule.right_part[1:]))
+    left_factoring(grammar)
+
+
+def commonprefix(m):
+    """
+    Возвращает наибольшую общую начальную часть у списка правил
+    :param m: Список правил
+    """
+    if not m:
+        return ''
+    s1 = min(m)
+    s2 = max(m)
+    for i, c in enumerate(s1.right_part):
+        if c != s2.right_part[i]:
+            return s1.right_part[:i]
+    return s1.right_part
+
+
+def handle_prod(j, prods):
+    common_list = []
+    for i in prods:
+        common_list += [commonprefix([j] + [i])]
+    return common_list
+
+
+def my_max(x):
+    p = math.inf
+    for i in x:
+        if i:
+            if len(i) < p:
+                p = len(i)
+    return p
+
+
+def left_factoring(grammar):
+    non_terminals = grammar.non_terminals.copy()
+    rules = frozenset(grammar.rules)
+    for non_terminal in non_terminals:
+        non_terminal_rules = [rule for rule in rules if rule.left_part == non_terminal]
+        if len(non_terminal_rules) > 1:
+            prefix = commonprefix(non_terminal_rules)
+            if prefix:
+                new_non_terminal = non_terminal+'2'
+                grammar.add_non_terminal(new_non_terminal)
+                grammar.add_rule(non_terminal, ' '.join(prefix + [new_non_terminal]))
+                for rule in non_terminal_rules:
+                    if rule.right_part[:len(prefix)] == prefix:
+                        new_right_part = rule.right_part[len(prefix):]
+                        grammar.rules.remove(rule)
+                        if new_right_part:
+                            grammar.add_rule(new_non_terminal, ' '.join(new_right_part))
+                        else:
+                            grammar.add_rule(new_non_terminal, grammar.eps)
