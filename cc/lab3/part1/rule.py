@@ -63,6 +63,7 @@ class Rule(object):
             child = Tree(cargo=right)
             tree.childs.append(child)
             if i.val() == len(string):
+                tree.childs.remove(child)
                 return True
             if right in non_terminals:
                 if not grammar.check_rules_for_non_terminal(non_terminal=right, string=string, i=i, tree=child, depth=depth):

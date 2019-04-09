@@ -21,7 +21,6 @@ class MyTestCase(unittest.TestCase):
         a.load_from_file('grammar')
         remove_left_recursion(a)
         a = eps_remove(a)
-        a.save_to_file('new_grammar')
         test_string = 'a = a ! ~ a & false'
         res, tree = a.check_string(test_string)
         self.assertEqual(True, res)
