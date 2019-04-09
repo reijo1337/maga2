@@ -1,4 +1,5 @@
 from part1.rule import Rule
+from syntax_tree import Tree
 from tools import list_compare, Integer
 
 
@@ -89,7 +90,7 @@ class Grammar(object):
                 f.write('\n')
             f.write(self.start)
 
-    def check_rules_for_non_terminal(self, non_terminal, string, i, depth = 0):
+    def check_rules_for_non_terminal(self, non_terminal, string, i, tree, depth=0):
         """
         Проверка правил для определенного нетерминала
         """
@@ -99,7 +100,7 @@ class Grammar(object):
             for tab in range(depth):
                 prefix = prefix + ' '
             print(prefix + f'Проверка правила {rule}')
-            if rule.check(string, i, self.non_terminals, self, depth + 1):
+            if rule.check(string, i, self.non_terminals, self, tree, depth + 1):
                 return True
         return False
 
@@ -107,8 +108,9 @@ class Grammar(object):
         string = inp.split(' ')
         i = Integer(0)
         # while i.val() < len(string):
-        res = self.check_rules_for_non_terminal(non_terminal=self.start, string=string, i=i)
+        tree = Tree(cargo=self.start)
+        res = self.check_rules_for_non_terminal(non_terminal=self.start, string=string, i=i, tree=tree)
         if res and i.val() == len(string):
-            return True
+            return True, tree
         else:
-            return False
+            return False, None

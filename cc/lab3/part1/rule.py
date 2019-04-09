@@ -1,3 +1,6 @@
+from syntax_tree import Tree
+
+
 class Rule(object):
     """
     Правило вывода для грамматики
@@ -47,17 +50,24 @@ class Rule(object):
                 return True
         return False
 
-    def check(self, string, i, non_terminals, grammar, depth=0):
+    def check(self, string, i, non_terminals, grammar, tree, depth=0):
+        """
+
+        :type tree: Tree
+        """
         original = i.val()
         prefix = ''
         for tab in range(depth):
             prefix = prefix + ' '
         for right in self.right_part:
+            child = Tree(cargo=right)
+            tree.childs.append(child)
             if i.val() == len(string):
                 return True
             if right in non_terminals:
-                if not grammar.check_rules_for_non_terminal(non_terminal=right, string=string, i=i, depth=depth):
+                if not grammar.check_rules_for_non_terminal(non_terminal=right, string=string, i=i, tree=child, depth=depth):
                     i.set(original)
+                    tree.childs.clear()
                     return False
             elif right == string[i.val()]:
                 print(prefix + f'Успешно обработали симовл {string[i.val()]} при позиции i={i.val()}')
@@ -66,6 +76,7 @@ class Rule(object):
                 print(prefix + f'Ошибка при i={i.val()} и соотвественном символе {string[i.val()]}')
                 print(prefix + f'Правило {self} \n')
                 i.set(original)
+                tree.childs.clear()
                 return False
         print(prefix + f'Подходит правило {self}\n')
         return True
