@@ -100,6 +100,7 @@ def build_sum(stack, start_state, final_states):
     new_start.moveOnEpsilon(a_start)
     new_start.moveOnEpsilon(start_state)
 
+    state: State
     for state in final_states:
         state.moveOnEpsilon(new_end)
         state.isFinalState = False

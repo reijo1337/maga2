@@ -33,7 +33,7 @@ def visualize_tree_node(root, fa_graph, level = 0, head_name = None):
         visualize_tree_node(child, fa_graph, level + 1)
 
 
-def visualize_tree(root):
+def visualize_tree(root, name='tree'):
     fa_graph = Digraph('finite_state_machine')
     visualize_tree_node(root, fa_graph)
-    fa_graph.view('tree')
+    fa_graph.view(name)

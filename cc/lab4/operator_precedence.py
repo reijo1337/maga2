@@ -152,6 +152,10 @@ def main(input_string):
 				for i in range(1, len(stack)):
 					key = ''.join(stack[i:])
 					if key in master.keys():
+						if len(key) == 3:
+							stack_op = operators.index(key[1])
+							if order_table[stack_op][temp2] in ['<', '=']:
+								continue
 						for ch in key:
 							if ch not in non_terminals:
 								pol_list.append(ch)
@@ -171,12 +175,12 @@ def main(input_string):
 		
 		if vlaag == 0:
 			print("Accepted!!")
-			visualize_tree(tree_stack[1])
+			visualize_tree(tree_stack[1], name=input_string)
 			print(f'Постфиксная запись: {"".join(pol_list)}')
 
 			return 0
-		
+
 
 if __name__ == "__main__":
-	input_string = 't ! ~ f & a'
+	input_string = 'a ! t & f'
 	main(input_string)
