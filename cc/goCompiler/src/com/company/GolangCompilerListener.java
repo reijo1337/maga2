@@ -31,9 +31,16 @@ public class GolangCompilerListener implements GolangListener {
     // Для генерации функций
     private HashMap<String, String> goToParVars = new HashMap<>();
     private StringBuilder functionBodyBuilder = new StringBuilder();
-    private HashMap<String, String> nodeToValue = new HashMap<>();
+//    private HashMap<String, String> nodeToValue = new HashMap<>();
+    private ParseTreeProperty<String> nodeToValue = new ParseTreeProperty<>();
 
     GolangCompilerListener() {
+    }
+
+    private void processForward(ParseTree ctx) {
+        ParseTree childValue = ctx.getChild(0);
+        String value = this.nodeToValue.get(childValue);
+        this.nodeToValue.put(ctx, value);
     }
 
     String result() {
@@ -158,7 +165,9 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpressionList(GolangParser.ExpressionListContext ctx) {
-
+        ParseTree childValue = ctx.getChild(0);
+        String value = this.nodeToValue.get(childValue);
+        this.nodeToValue.put(ctx, value);
     }
 
     @Override
@@ -191,12 +200,8 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitFunctionDecl(GolangParser.FunctionDeclContext ctx) {
-        for(Map.Entry<String, String> entry : goToParVars.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            System.out.println(key + "->" + value);
-        }
+        stringBuilder.append(functionBodyBuilder.toString());
+        functionBodyBuilder = new StringBuilder();
         stringBuilder.append(".end");
         stringBuilder.append("\n");
     }
@@ -343,7 +348,6 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterShortVarDecl(GolangParser.ShortVarDeclContext ctx) {
-        System.out.println(ctx.getClass().getSimpleName());
 
     }
 
@@ -352,11 +356,12 @@ public class GolangCompilerListener implements GolangListener {
         StringBuilder shorDeclaration = new StringBuilder();
         String leftPart = ctx.getChild(0).getText();
         String varName = this.goToParVars.get(leftPart);
-        String rightPart = this.nodeToValue.get(ctx.getChild(2).getText());
-        this.functionBodyBuilder.append(leftPart);
-        this.functionBodyBuilder.append(" = ");
-        this.functionBodyBuilder.append(rightPart);
-        this.functionBodyBuilder.append("\n");
+        String rightPart = this.nodeToValue.get(ctx.getChild(2));
+        shorDeclaration.append(varName);
+        shorDeclaration.append(" = ");
+        shorDeclaration.append(rightPart);
+        shorDeclaration.append("\n");
+        this.functionBodyBuilder.append(shorDeclaration.toString());
     }
 
     @Override
@@ -806,9 +811,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitOperand(GolangParser.OperandContext ctx) {
-        String childValue = ctx.getChild(0).getText();
-        String value = this.nodeToValue.get(childValue);
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), value);
+        this.processForward(ctx);
     }
 
     @Override
@@ -818,9 +821,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitLiteral(GolangParser.LiteralContext ctx) {
-        String childValue = ctx.getChild(0).getText();
-        String value = this.nodeToValue.get(childValue);
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), value);
+        this.processForward(ctx);
     }
 
     @Override
@@ -831,7 +832,7 @@ public class GolangCompilerListener implements GolangListener {
     @Override
     public void exitBasicLit(GolangParser.BasicLitContext ctx) {
         String value = ctx.getText();
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), value);
+        this.nodeToValue.put(ctx, value);
     }
 
     @Override
@@ -841,7 +842,9 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitOperandName(GolangParser.OperandNameContext ctx) {
-
+        String value = ctx.getText();
+        String parrotName = this.goToParVars.get(value);
+        this.nodeToValue.put(ctx, parrotName);
     }
 
     @Override
@@ -971,9 +974,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitPrimaryExpr(GolangParser.PrimaryExprContext ctx) {
-        String childValue = ctx.getChild(0).getText();
-        String value = this.nodeToValue.get(childValue);
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), value);
+        this.processForward(ctx);
     }
 
     @Override
@@ -1053,11 +1054,17 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpression(GolangParser.ExpressionContext ctx) {
+        StringBuilder value = new StringBuilder();
         for (int i = 0; i < ctx.getChildCount(); i++) {
-            String childValue = ctx.getChild(0).getText();
-            String value = this.nodeToValue.get(childValue);
+            ParseTree child = ctx.getChild(i);
+            String childValue = this.nodeToValue.get(child);
+            if (childValue == null) {
+                childValue = child.getText();
+            }
+            value.append(childValue);
+            value.append(" ");
         }
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), "");
+        this.nodeToValue.put(ctx, value.toString());
     }
 
     @Override
@@ -1067,9 +1074,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitUnaryExpr(GolangParser.UnaryExprContext ctx) {
-        String childValue = ctx.getChild(0).getText();
-        String value = this.nodeToValue.get(childValue);
-        this.nodeToValue.put(ctx.getClass().getSimpleName(), value);
+        this.processForward(ctx);
     }
 
     @Override
