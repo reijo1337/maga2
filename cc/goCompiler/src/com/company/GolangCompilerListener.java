@@ -3,14 +3,39 @@ package com.company;
 import com.company.gen.GolangListener;
 import com.company.gen.GolangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.util.*;
+
 
 public class GolangCompilerListener implements GolangListener {
-    List<Integer> integers = new ArrayList();
+    private ParseTreeProperty<Integer> intValues = new ParseTreeProperty<>();
+    private ParseTreeProperty<Float> _floatValues = new ParseTreeProperty<>();
+    private ParseTreeProperty<String> _stringValues = new ParseTreeProperty<>();
+    private ParseTreeProperty<String> _whichValues = new ParseTreeProperty<>();
+
+    private List<ByteArrayOutputStream> stackOutputStream = new ArrayList<>();
+    private Hashtable<String, ByteArrayOutputStream> functionDefinitionStreams = new Hashtable<>();
+
+    private Hashtable<Token, String> tokenStringHashtable = new Hashtable<>();
+    private HashMap<String, String> goToParVars = new HashMap<>();
+
+    private int numReg = 0;
+
+    private StringBuilder stringBuilder = new StringBuilder();
+
+    GolangCompilerListener() {
+    }
+
+    String result() {
+        return stringBuilder.toString();
+    }
+
     @Override
     public void enterSourceFile(GolangParser.SourceFileContext ctx) {
 
@@ -53,16 +78,21 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterImportPath(GolangParser.ImportPathContext ctx) {
-
+        String packageName = ctx.getChild(0).getText();
+        packageName = packageName.replaceAll("\"", "");
+        stringBuilder.append(".include \"stdlib/");
+        stringBuilder.append(packageName);
+        stringBuilder.append(".pir\"");
     }
 
     @Override
     public void exitImportPath(GolangParser.ImportPathContext ctx) {
-
+        stringBuilder.append("\n");
     }
 
     @Override
     public void enterTopLevelDecl(GolangParser.TopLevelDeclContext ctx) {
+        stringBuilder.append("\n");
 
     }
 
@@ -108,6 +138,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitIdentifierList(GolangParser.IdentifierListContext ctx) {
+        String varName = ctx.getChild(0).getText();
+        if (!goToParVars.containsKey(varName)) {
+            String newParVar = "$P" + numReg;
+            goToParVars.put(varName, newParVar);
+            numReg++;
+        }
 
     }
 
@@ -143,12 +179,22 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterFunctionDecl(GolangParser.FunctionDeclContext ctx) {
-
+        String funcName = ctx.getChild(1).getText();
+        stringBuilder.append(".sub ");
+        stringBuilder.append(funcName);
+        stringBuilder.append("\n");
     }
 
     @Override
     public void exitFunctionDecl(GolangParser.FunctionDeclContext ctx) {
+        for(Map.Entry<String, String> entry : goToParVars.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
 
+            System.out.println(key + "->" + value);
+        }
+        stringBuilder.append(".end");
+        stringBuilder.append("\n");
     }
 
     @Override
@@ -293,6 +339,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterShortVarDecl(GolangParser.ShortVarDeclContext ctx) {
+        System.out.println(ctx.getClass().getSimpleName());
 
     }
 
@@ -758,7 +805,6 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitLiteral(GolangParser.LiteralContext ctx) {
-
     }
 
     @Override
@@ -768,7 +814,6 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitBasicLit(GolangParser.BasicLitContext ctx) {
-
     }
 
     @Override
@@ -988,7 +1033,6 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpression(GolangParser.ExpressionContext ctx) {
-
     }
 
     @Override
@@ -1023,7 +1067,31 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void visitTerminal(TerminalNode terminalNode) {
-
+        Token symbol = terminalNode.getSymbol();
+        String symbolText = symbol.getText();
+        switch(symbol.getType())
+        {
+            case GolangParser.INT_LIT:
+                intValues.put(terminalNode, Integer.valueOf(symbolText));
+                _whichValues.put(terminalNode, "Integer");
+                break;
+            case GolangParser.FLOAT_LIT:
+                _floatValues.put(terminalNode, Float.valueOf(symbolText));
+                _whichValues.put(terminalNode, "Float");
+                break;
+            case GolangParser.STRING_LIT:
+                symbolText = symbolText.replaceAll("\"$", "");
+                symbolText = symbolText.replaceAll("^\"", "");
+                symbolText = symbolText.replaceAll("\'$", "");
+                symbolText = symbolText.replaceAll("^\'", "");
+                _stringValues.put(terminalNode, symbolText);
+                _whichValues.put(terminalNode, "String");
+                break;
+            case GolangParser.IDENTIFIER:
+                _stringValues.put(terminalNode, symbolText);
+                _whichValues.put(terminalNode, "Dynamic");
+                break;
+        }
     }
 
     @Override

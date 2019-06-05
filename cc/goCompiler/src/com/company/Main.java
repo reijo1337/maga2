@@ -15,7 +15,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        String source = "/home/g-tantsevov/maga2/cc/goCompiler/src/examples/hello.go";
+        String source = "/home/g-tantsevov/maga2/cc/goCompiler/src/examples/main.go";
         List<Token> tokens = new ArrayList<>();
         GolangLexer lexer;
         GolangParser parser;
@@ -46,5 +46,10 @@ public class Main {
 
         //делаем обход дерева
         ParseTreeWalker parseTreeWalker = new ParseTreeWalker();
+        GolangCompilerListener golangCompilerListener = new GolangCompilerListener();
+
+        parseTreeWalker.walk(golangCompilerListener, sourceFileContext);
+
+        System.out.println(golangCompilerListener.result());
     }
 }
