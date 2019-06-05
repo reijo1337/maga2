@@ -11,5 +11,6 @@ func sample() int {
 }
 
 func main() {
-	fmt.Println(sample())
+	a := sample()
+	fmt.Println(a)
 }
