@@ -14,4 +14,11 @@ func sample() int {
 func main() {
 	a := sample()
 	fmt.Println(a)
+	printHelloWorld()
+}
+
+func printHelloWorld() {
+    for i := 0; i < 10; i++ {
+        fmt.Println(i)
+    }
 }

@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.nio.charset.Charset;
 import java.util.*;
 
 
@@ -29,6 +30,49 @@ public class GolangCompilerListener implements GolangListener {
     private List<String> imports = new ArrayList<>();
 
     private StringBuilder parrotImports = new StringBuilder();
+    private List<LoopStatement> loops = new ArrayList<>();
+    private boolean inLoop = false;
+
+    class LoopStatement {
+        String name;
+        String counter;
+        String startValue;
+        String endValue;
+        String funcBody;
+
+        LoopStatement() {
+            int leftLimit = 97; // letter 'a'
+            int rightLimit = 122; // letter 'z'
+            int targetStringLength = 10;
+            Random random = new Random();
+            StringBuilder buffer = new StringBuilder(targetStringLength);
+            for (int i = 0; i < targetStringLength; i++) {
+                int randomLimitedInt = leftLimit + (int)
+                        (random.nextFloat() * (rightLimit - leftLimit + 1));
+                buffer.append((char) randomLimitedInt);
+            }
+            this.name = buffer.toString();
+        }
+
+        String getParrotLoop() {
+            return name + "_init:\n" +
+                    "    .local int " + counter + "\n" +
+                    "    " + counter + " = 1\n" +
+                    "\n" +
+                    "  " + name + "_test:\n" +
+                    "    if " + counter + " "+endValue+" goto " + name + "_body\n" +
+                    "    goto " + name + "_end\n" +
+                    "\n" +
+                    "  "+name+"_body:\n" +
+                    "    "+ funcBody +"\n" +
+                    "\n" +
+                    "  " + name + "_continue:\n" +
+                    "    inc "+counter+"\n" +
+                    "    goto "+name+"_test\n" +
+                    "\n" +
+                    "  "+name+"_end:\n";
+        }
+    }
 
     GolangCompilerListener() {
     }
@@ -54,7 +98,11 @@ public class GolangCompilerListener implements GolangListener {
     }
 
     String result() {
-        return stringBuilder.toString();
+        StringBuilder ret = new StringBuilder();
+        for (String line: stringBuilder.toString().split("\n")) {
+            ret.append(line.trim()).append("\n");
+        }
+        return ret.toString();
     }
 
     @Override
@@ -164,6 +212,9 @@ public class GolangCompilerListener implements GolangListener {
         String varName = ctx.getChild(0).getText();
         if (!goToParVars.containsKey(varName)) {
             String newParVar = "$P" + numReg;
+            if (inLoop && loops.get(loops.size() - 1).counter == null) {
+                newParVar = varName;
+            }
             goToParVars.put(varName, newParVar);
             numReg++;
         }
@@ -287,7 +338,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitBlock(GolangParser.BlockContext ctx) {
-
+        if (inLoop) {
+            loops.get(loops.size()-1).funcBody = nodeToValue.get(ctx.getChild(1));
+        } else {
+                String statementValue = this.nodeToValue.get(ctx.getChild(1));
+                this.functionBodyBuilder.append(statementValue);
+        }
     }
 
     @Override
@@ -297,11 +353,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitStatementList(GolangParser.StatementListContext ctx) {
-        for (int i = 0; i < ctx.getChildCount(); i++) {
-            String statementValue = this.nodeToValue.get(ctx.getChild(i));
-            this.functionBodyBuilder.append(statementValue);
-//            this.functionBodyBuilder.append("\n");
-        }
+        this.processChilds(ctx);
     }
 
     @Override
@@ -385,6 +437,12 @@ public class GolangCompilerListener implements GolangListener {
         String leftPart = ctx.getChild(0).getText();
         String varName = this.goToParVars.get(leftPart);
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
+
+        if (inLoop && this.loops.get(this.loops.size() - 1).counter == null) {
+            this.loops.get(this.loops.size() - 1).counter = leftPart;
+            this.loops.get(this.loops.size() - 1).startValue = rightPart;
+            return;
+        }
         // Если справа нет переменных
         boolean needBox = true;
         for (String var: this.goToParVars.values()) {
@@ -401,7 +459,6 @@ public class GolangCompilerListener implements GolangListener {
         shorDeclaration.append(rightPart);
         shorDeclaration.append("\n");
         this.nodeToValue.put(ctx, shorDeclaration.toString());
-//        this.functionBodyBuilder.append(shorDeclaration.toString());
     }
 
     @Override
@@ -630,12 +687,16 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterForStmt(GolangParser.ForStmtContext ctx) {
-
+        this.loops.add(new LoopStatement());
+        this.inLoop = true;
     }
 
     @Override
     public void exitForStmt(GolangParser.ForStmtContext ctx) {
-
+        this.inLoop = false;
+        int loopClassIndex = loops.size() - 1;
+        LoopStatement loop = this.loops.get(loopClassIndex);
+        this.nodeToValue.put(ctx, loop.getParrotLoop());
     }
 
     @Override
@@ -1109,6 +1170,11 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpression(GolangParser.ExpressionContext ctx) {
+        if (inLoop && ctx.getChildCount() == 3) {
+            this.loops.get(this.loops.size() - 1).endValue = ctx.getChild(1).getText() +
+                    " " + ctx.getChild(2).getText();
+            return;
+        }
         this.processChilds(ctx);
     }
 
