@@ -28,6 +28,8 @@ public class GolangCompilerListener implements GolangListener {
     private ParseTreeProperty<String> nodeToValue = new ParseTreeProperty<>();
     private List<String> imports = new ArrayList<>();
 
+    private StringBuilder parrotImports = new StringBuilder();
+
     GolangCompilerListener() {
     }
 
@@ -46,7 +48,7 @@ public class GolangCompilerListener implements GolangListener {
                 childValue = child.getText();
             }
             value.append(childValue);
-//            value.append(" ");
+            value.append(" ");
         }
         this.nodeToValue.put(ctx, value.toString());
     }
@@ -62,7 +64,8 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitSourceFile(GolangParser.SourceFileContext ctx) {
-
+        stringBuilder.append("\n");
+        stringBuilder.append(parrotImports.toString());
     }
 
     @Override
@@ -100,14 +103,14 @@ public class GolangCompilerListener implements GolangListener {
         String packageName = ctx.getChild(0).getText();
         packageName = packageName.replaceAll("\"", "");
         imports.add(packageName);
-        stringBuilder.append(".include \"stdlib/");
-        stringBuilder.append(packageName);
-        stringBuilder.append(".pir\"");
+        parrotImports.append(".include \"stdlib/");
+        parrotImports.append(packageName);
+        parrotImports.append(".pir\"\n");
     }
 
     @Override
     public void exitImportPath(GolangParser.ImportPathContext ctx) {
-        stringBuilder.append("\n");
+
     }
 
     @Override
@@ -201,18 +204,30 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterFunctionDecl(GolangParser.FunctionDeclContext ctx) {
-        String funcName = ctx.getChild(1).getText();
-        stringBuilder.append(".sub ");
-        stringBuilder.append(funcName);
-        stringBuilder.append("\n");
+
     }
 
     @Override
     public void exitFunctionDecl(GolangParser.FunctionDeclContext ctx) {
-        stringBuilder.append(functionBodyBuilder.toString());
+
+        StringBuilder funcText = new StringBuilder();
+
+        String funcName = ctx.getChild(1).getText();
+        funcText.append(".sub ");
+        funcText.append(funcName);
+        funcText.append("\n");
+        funcText.append("\n");
+        funcText.append(functionBodyBuilder.toString());
         functionBodyBuilder = new StringBuilder();
-        stringBuilder.append(".end");
-        stringBuilder.append("\n");
+        funcText.append(".end");
+        funcText.append("\n");
+
+        if ("main".equals(funcName)) {
+            funcText.append(stringBuilder.toString());
+            stringBuilder = funcText;
+        } else {
+            stringBuilder.append(funcText.toString());
+        }
     }
 
     @Override
@@ -370,6 +385,17 @@ public class GolangCompilerListener implements GolangListener {
         String leftPart = ctx.getChild(0).getText();
         String varName = this.goToParVars.get(leftPart);
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
+        // Если справа нет переменных
+        boolean needBox = true;
+        for (String var: this.goToParVars.values()) {
+            if (rightPart.contains(var)) {
+                needBox = false;
+                break;
+            }
+        }
+        if (needBox) {
+            rightPart = "box " + rightPart;
+        }
         shorDeclaration.append(varName);
         shorDeclaration.append(" = ");
         shorDeclaration.append(rightPart);
@@ -865,8 +891,14 @@ public class GolangCompilerListener implements GolangListener {
             value = "";
         } else {
             value = this.goToParVars.get(value);
+            if (value == null) {
+                value = ctx.getText();
+            }
         }
         this.nodeToValue.put(ctx, value);
+        if (!this.goToParVars.containsKey(value)) {
+            goToParVars.put(value, value);
+        }
     }
 
     @Override

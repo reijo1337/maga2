@@ -6,7 +6,8 @@ import (
 
 func sample() int {
 	a := 42
-	b := a / 2
+	c := a + 12
+	b := c / 2
 	return b
 }
 

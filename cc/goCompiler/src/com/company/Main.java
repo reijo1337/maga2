@@ -8,14 +8,18 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) {
-        String source = "/home/g-tantsevov/maga2/cc/goCompiler/src/examples/main.go";
+        String source = "src/examples/main.go";
+        String[] sourceParts = source.split("/");
+        String filename = sourceParts[sourceParts.length - 1].split("\\.")[0];
         List<Token> tokens = new ArrayList<>();
         GolangLexer lexer;
         GolangParser parser;
@@ -51,5 +55,10 @@ public class Main {
         parseTreeWalker.walk(golangCompilerListener, sourceFileContext);
 
         System.out.println(golangCompilerListener.result());
+        try (PrintWriter out = new PrintWriter("pirbook/"+ filename + ".pir")) {
+            out.println(golangCompilerListener.result());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
