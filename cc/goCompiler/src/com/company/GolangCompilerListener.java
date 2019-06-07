@@ -57,7 +57,7 @@ public class GolangCompilerListener implements GolangListener {
         String getParrotLoop() {
             return name + "_init:\n" +
                     "    .local int " + counter + "\n" +
-                    "    " + counter + " = 1\n" +
+                    "    " + counter + " = " + startValue + "\n" +
                     "\n" +
                     "  " + name + "_test:\n" +
                     "    if " + counter + " "+endValue+" goto " + name + "_body\n" +
@@ -906,7 +906,9 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitParameterDecl(GolangParser.ParameterDeclContext ctx) {
-
+        String paramName = ctx.getChild(0).getText();
+        functionBodyBuilder.append(".param pmc ").append(paramName).append("\n");
+        this.goToParVars.put(paramName, paramName);
     }
 
     @Override
