@@ -3,13 +3,11 @@ package com.company;
 import com.company.gen.GolangListener;
 import com.company.gen.GolangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.nio.charset.Charset;
 import java.util.*;
 
 
@@ -37,12 +35,19 @@ public class GolangCompilerListener implements GolangListener {
     private List<IfStatement> ifs = new ArrayList<>();
     private boolean inIf = false;
 
+    private List<String> prepares = new ArrayList<>();
+
+    private boolean inForClause = false;
+
     class LoopStatement {
         String name;
         String counter;
         String startValue;
-        String endValue;
+        String endValue = "";
+        String tempNum;
+        String tempValueBody = "";
         String funcBody;
+        String conditionParam;
 
         LoopStatement() {
             int leftLimit = 97; // letter 'a'
@@ -56,6 +61,13 @@ public class GolangCompilerListener implements GolangListener {
                 buffer.append((char) randomLimitedInt);
             }
             this.name = buffer.toString();
+            this.tempNum = "$P"+numReg;
+            tempValueBody = tempNum + " = new \"Integer\"\n";
+            numReg++;
+        }
+
+        void addTemp(String temp) {
+            tempValueBody += tempNum + " = " + temp + "\n";
         }
 
         String getParrotLoop() {
@@ -64,7 +76,8 @@ public class GolangCompilerListener implements GolangListener {
                     "    " + counter + " = box " + startValue + "\n" +
                     "\n" +
                     "  " + name + "_test:\n" +
-                    "    if " + counter + " "+endValue+" goto " + name + "_body\n" +
+                    tempValueBody +
+                    "    if " + counter + " "+conditionParam + " " + tempNum + " goto " + name + "_body\n" +
                     "    goto " + name + "_end\n" +
                     "\n" +
                     "  "+name+"_body:\n" +
@@ -102,6 +115,9 @@ public class GolangCompilerListener implements GolangListener {
         }
 
         String getParrotFor() {
+            if (elseBody == null) {
+                elseBody = "";
+            }
             return conditionName + " = " + condition + "\n" +
                     "if " + conditionName + " " + compare + " goto " + name + "_do_it\n" +
                     elseBody + "\n" +
@@ -266,9 +282,11 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpressionList(GolangParser.ExpressionListContext ctx) {
+        StringBuilder value = new StringBuilder();
+
         ParseTree childValue = ctx.getChild(0);
-        String value = this.nodeToValue.get(childValue);
-        this.nodeToValue.put(ctx, value);
+        value.append(this.nodeToValue.get(childValue));
+        this.nodeToValue.put(ctx, value.toString());
     }
 
     @Override
@@ -454,7 +472,38 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitAssignment(GolangParser.AssignmentContext ctx) {
-
+        StringBuilder shorDeclaration = new StringBuilder();
+        for (String prep: this.prepares) {
+            shorDeclaration.append(prep).append("\n");
+        }
+        prepares.clear();
+        String leftPart = ctx.getChild(0).getText();
+        String varName = this.goToParVars.get(leftPart);
+        if (varName == null) {
+            varName = this.nodeToValue.get(ctx.getChild(0));
+        }
+        String rightPart = this.nodeToValue.get(ctx.getChild(2));
+        if (rightPart.contains("[")) {
+            shorDeclaration.append("$P").append(numReg).append(" = ").append(rightPart).append("\n");
+            rightPart = "$P" + numReg;
+            numReg++;
+        }
+        // Если справа нет переменных
+        boolean needBox = true;
+        for (String var: this.goToParVars.values()) {
+            if (rightPart.contains(var)) {
+                needBox = false;
+                break;
+            }
+        }
+        if (needBox) {
+            rightPart = "box " + rightPart;
+        }
+        shorDeclaration.append(varName);
+        shorDeclaration.append(" = ");
+        shorDeclaration.append(rightPart);
+        shorDeclaration.append("\n");
+        this.nodeToValue.put(ctx, shorDeclaration.toString());
     }
 
     @Override
@@ -475,6 +524,10 @@ public class GolangCompilerListener implements GolangListener {
     @Override
     public void exitShortVarDecl(GolangParser.ShortVarDeclContext ctx) {
         StringBuilder shorDeclaration = new StringBuilder();
+        for (String prep: this.prepares) {
+            shorDeclaration.append(prep).append("\n");
+        }
+        prepares.clear();
         String leftPart = ctx.getChild(0).getText();
         String varName = this.goToParVars.get(leftPart);
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
@@ -754,12 +807,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterForClause(GolangParser.ForClauseContext ctx) {
-
+        this.inForClause = true;
     }
 
     @Override
     public void exitForClause(GolangParser.ForClauseContext ctx) {
-
+        this.inForClause = false;
     }
 
     @Override
@@ -1154,7 +1207,18 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitPrimaryExpr(GolangParser.PrimaryExprContext ctx) {
-        this.processChilds(ctx);
+        StringBuilder value = new StringBuilder();
+
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            ParseTree child = ctx.getChild(i);
+            String childValue = this.nodeToValue.get(child);
+            if (childValue == null) {
+                childValue = child.getText();
+            }
+            value.append(childValue);
+            value.append(" ");
+        }
+        this.nodeToValue.put(ctx, value.toString());
     }
 
     @Override
@@ -1170,11 +1234,43 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterIndex(GolangParser.IndexContext ctx) {
+    }
 
+    public static boolean isInteger(String s) {
+        boolean isValidInteger = false;
+        try
+        {
+            Integer.parseInt(s);
+
+            // s is a valid integer
+
+            isValidInteger = true;
+        }
+        catch (NumberFormatException ex)
+        {
+            // s is not an integer
+        }
+
+        return isValidInteger;
     }
 
     @Override
     public void exitIndex(GolangParser.IndexContext ctx) {
+        String indexVal = ctx.getChild(1).getText().replace("", " ").trim();
+        String newVal = "$P" + numReg;
+        numReg++;
+        nodeToValue.put(ctx.getChild(1), newVal);
+        String box = "box ";
+        for (String var: this.goToParVars.values()) {
+            if (indexVal.contains(var)) {
+                box = "";
+                break;
+            }
+        }
+        if (isInteger(indexVal)) {
+            box = "box ";
+        }
+        prepares.add(newVal + " = " + box + indexVal);
         this.processChilds(ctx);
     }
 
@@ -1240,9 +1336,31 @@ public class GolangCompilerListener implements GolangListener {
             this.ifs.get(this.ifs.size() - 1).compare = "==" + this.nodeToValue.get(ctx.getChild(2));
             return;
         }
-        if (inLoop && ctx.getChildCount() == 3 && !inIf) {
-            this.loops.get(this.loops.size() - 1).endValue = ctx.getChild(1).getText() +
-                    " " + ctx.getChild(2).getText();
+        if (inIf && ctx.getChildCount() == 3 && ctx.getChild(1).getText().equals(">")) {
+            this.ifs.get(this.ifs.size() - 1).condition = this.nodeToValue.get(ctx.getChild(0));
+            this.ifs.get(this.ifs.size() - 1).compare = ">" + this.nodeToValue.get(ctx.getChild(2));
+            return;
+        }
+        if (inLoop && ctx.getChildCount() == 3 && !inIf && inForClause) {
+            String child1 = nodeToValue.get(ctx.getChild(1));
+            if (child1 == null)
+                child1 = ctx.getChild(1).getText();
+            String child2 = nodeToValue.get(ctx.getChild(2));
+            if (child2 == null)
+                child2 = ctx.getChild(2).getText();
+            if (child1.equals("<") || child1.equals("==") ||child1.equals(">")) {
+                this.loops.get(this.loops.size() - 1).conditionParam = child1;
+                String box = "box ";
+                for (String var: this.goToParVars.values()) {
+                    if (child2.contains(var)) {
+                        box = "";
+                        break;
+                    }
+                }
+                this.loops.get(this.loops.size() - 1).addTemp(box + child2);
+            } else {
+                this.loops.get(this.loops.size() - 1).addTemp(this.loops.get(this.loops.size() - 1).tempNum + " " + child1 + " " + child2);
+            }
             return;
         }
         this.processChilds(ctx);

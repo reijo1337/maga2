@@ -17,6 +17,24 @@ func main() {
 	printHelloWorld()
 	printChoose(1337)
 	printLotsHelloWorld()
+
+	k := []int{
+		7,
+		1,
+		5,
+	}
+
+	d := k[0]
+	fmt.Println(d)
+	e := k[1]
+	fmt.Println(e)
+	f := k[2]
+	fmt.Println(f)
+
+	fmt.Println("\n")
+
+	bubbleSort(k)
+
 }
 
 func printHelloWorld() {
@@ -44,4 +62,26 @@ func printLotsHelloWorld() {
 			fmt.Println("WORLD")
 		}
 	}
+}
+
+func bubbleSort(a []int) {
+	n := len(a)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-i-1; j++ {
+			b := a[j]
+			c := a[j+1]
+			if b > c {
+				tmp := a[j]
+				a[j] = a[j+1]
+				a[j+1] = tmp
+			}
+		}
+	}
+
+	g := a[0]
+	fmt.Println(g)
+	h := a[1]
+	fmt.Println(h)
+	i := a[2]
+	fmt.Println(i)
 }
