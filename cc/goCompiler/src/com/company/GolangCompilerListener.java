@@ -1034,7 +1034,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitCompositeLit(GolangParser.CompositeLitContext ctx) {
-
+        nodeToValue.put(ctx, nodeToValue.get(ctx.getChild(1)));
     }
 
     @Override
@@ -1054,7 +1054,11 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitLiteralValue(GolangParser.LiteralValueContext ctx) {
-
+        StringBuilder arr = new StringBuilder();
+        arr.append("new \"ResizablePMCArray\"").append("\n");
+        arr.append(nodeToValue.get(ctx.getChild(1)));
+        nodeToValue.put(ctx, arr.toString());
+        goToParVars.put("new", "new");
     }
 
     @Override
@@ -1064,7 +1068,13 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitElementList(GolangParser.ElementListContext ctx) {
-
+        StringBuilder val = new StringBuilder();
+        for (int i = 0; i < ctx.getChildCount(); i=i+2) {
+            int index = i / 2;
+            val.append("$P").append(numReg-1).append("[").append(index).append("]")
+                    .append(" = ").append(nodeToValue.get(ctx.getChild(i))).append("\n");
+        }
+        this.nodeToValue.put(ctx, val.toString());
     }
 
     @Override
@@ -1074,7 +1084,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitKeyedElement(GolangParser.KeyedElementContext ctx) {
-
+        this.processForward(ctx);
     }
 
     @Override
@@ -1094,7 +1104,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitElement(GolangParser.ElementContext ctx) {
-
+        this.processForward(ctx);
     }
 
     @Override
@@ -1165,7 +1175,7 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitIndex(GolangParser.IndexContext ctx) {
-
+        this.processChilds(ctx);
     }
 
     @Override
