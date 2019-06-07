@@ -20,6 +20,7 @@ public class GolangCompilerListener implements GolangListener {
 //    private ParseTreeProperty<String> _whichValues = new ParseTreeProperty<>();
 
     private int numReg = 0;
+    private int intReg = 0;
 
     private StringBuilder stringBuilder = new StringBuilder();
 
@@ -32,6 +33,9 @@ public class GolangCompilerListener implements GolangListener {
     private StringBuilder parrotImports = new StringBuilder();
     private List<LoopStatement> loops = new ArrayList<>();
     private boolean inLoop = false;
+
+    private List<IfStatement> ifs = new ArrayList<>();
+    private boolean inIf = false;
 
     class LoopStatement {
         String name;
@@ -56,8 +60,8 @@ public class GolangCompilerListener implements GolangListener {
 
         String getParrotLoop() {
             return name + "_init:\n" +
-                    "    .local int " + counter + "\n" +
-                    "    " + counter + " = " + startValue + "\n" +
+                    "    .local pmc " + counter + "\n" +
+                    "    " + counter + " = box " + startValue + "\n" +
                     "\n" +
                     "  " + name + "_test:\n" +
                     "    if " + counter + " "+endValue+" goto " + name + "_body\n" +
@@ -71,6 +75,40 @@ public class GolangCompilerListener implements GolangListener {
                     "    goto "+name+"_test\n" +
                     "\n" +
                     "  "+name+"_end:\n";
+        }
+    }
+
+    class IfStatement {
+        String ifBody;
+        String elseBody;
+        String condition;
+        String conditionName;
+        String compare;
+        String name;
+        IfStatement() {
+            int leftLimit = 97; // letter 'a'
+            int rightLimit = 122; // letter 'z'
+            int targetStringLength = 10;
+            Random random = new Random();
+            StringBuilder buffer = new StringBuilder(targetStringLength);
+            for (int i = 0; i < targetStringLength; i++) {
+                int randomLimitedInt = leftLimit + (int)
+                        (random.nextFloat() * (rightLimit - leftLimit + 1));
+                buffer.append((char) randomLimitedInt);
+            }
+            this.name = buffer.toString();
+            this.conditionName = "$P" + intReg;
+            intReg++;
+        }
+
+        String getParrotFor() {
+            return conditionName + " = " + condition + "\n" +
+                    "if " + conditionName + " " + compare + " goto " + name + "_do_it\n" +
+                    elseBody + "\n" +
+                    "goto " + name + "_dont_do_it\n" +
+                    name + "_do_it:\n" +
+                    ifBody + "\n" +
+                    name + "_dont_do_it:";
         }
     }
 
@@ -338,9 +376,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitBlock(GolangParser.BlockContext ctx) {
-        if (inLoop) {
+        if(inIf) {
+            this.nodeToValue.put(ctx, this.nodeToValue.get(ctx.getChild(1)));
+        }  else if (inLoop) {
             loops.get(loops.size()-1).funcBody = nodeToValue.get(ctx.getChild(1));
-        } else {
+        }
+        else {
                 String statementValue = this.nodeToValue.get(ctx.getChild(1));
                 this.functionBodyBuilder.append(statementValue);
         }
@@ -547,12 +588,21 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterIfStmt(GolangParser.IfStmtContext ctx) {
-
+        this.ifs.add(new IfStatement());
+        this.inIf = true;
     }
 
     @Override
     public void exitIfStmt(GolangParser.IfStmtContext ctx) {
-
+        int ifClassIndex = ifs.size() - 1;
+        IfStatement ifSt = this.ifs.get(ifClassIndex);
+        ifSt.ifBody = nodeToValue.get(ctx.getChild(2));
+        ifSt.elseBody = nodeToValue.get(ctx.getChild(4));
+        this.ifs.remove(ifClassIndex);
+        if (this.ifs.size() == 0) {
+            this.inIf = false;
+        }
+        this.nodeToValue.put(ctx, ifSt.getParrotFor());
     }
 
     @Override
@@ -1175,7 +1225,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitExpression(GolangParser.ExpressionContext ctx) {
-        if (inLoop && ctx.getChildCount() == 3) {
+        if (inIf && ctx.getChildCount() == 3 && ctx.getChild(1).getText().equals("==")) {
+            this.ifs.get(this.ifs.size() - 1).condition = this.nodeToValue.get(ctx.getChild(0));
+            this.ifs.get(this.ifs.size() - 1).compare = "==" + this.nodeToValue.get(ctx.getChild(2));
+            return;
+        }
+        if (inLoop && ctx.getChildCount() == 3 && !inIf) {
             this.loops.get(this.loops.size() - 1).endValue = ctx.getChild(1).getText() +
                     " " + ctx.getChild(2).getText();
             return;
