@@ -693,9 +693,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitForStmt(GolangParser.ForStmtContext ctx) {
-        this.inLoop = false;
         int loopClassIndex = loops.size() - 1;
         LoopStatement loop = this.loops.get(loopClassIndex);
+        this.loops.remove(loopClassIndex);
+        if (this.loops.size() == 0) {
+            this.inLoop = false;
+        }
         this.nodeToValue.put(ctx, loop.getParrotLoop());
     }
 

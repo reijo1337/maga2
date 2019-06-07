@@ -19,8 +19,11 @@ func main() {
 }
 
 func printHelloWorld() {
-    for i := 10; i < 20; i++ {
-        fmt.Println(i)
+    for i := 0; i < 10; i++ {
+    	for j := 0; j < 3; j++ {
+			fmt.Println(i)
+			fmt.Println(j)
+		}
     }
 }
 
