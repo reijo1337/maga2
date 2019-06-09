@@ -17,7 +17,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        String source = "src/examples/main.go";
+        String source = "src/examples/list.go";
         String[] sourceParts = source.split("/");
         String filename = sourceParts[sourceParts.length - 1].split("\\.")[0];
         List<Token> tokens = new ArrayList<>();

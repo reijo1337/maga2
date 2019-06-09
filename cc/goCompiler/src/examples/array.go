@@ -27,6 +27,8 @@ func bubbleSort(a []int) {
 		for j := 0; j < n-i-1; j++ {
 			b := a[j]
 			c := a[j+1]
+			fmt.Println(b)
+			fmt.Println(c)
 			if b > c {
 				tmp := a[j]
 				a[j] = a[j+1]

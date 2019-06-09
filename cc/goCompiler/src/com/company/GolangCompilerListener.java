@@ -12,11 +12,7 @@ import java.util.*;
 
 
 public class GolangCompilerListener implements GolangListener {
-//    private ParseTreeProperty<Integer> intValues = new ParseTreeProperty<>();
-//    private ParseTreeProperty<Float> _floatValues = new ParseTreeProperty<>();
-//    private ParseTreeProperty<String> _stringValues = new ParseTreeProperty<>();
-//    private ParseTreeProperty<String> _whichValues = new ParseTreeProperty<>();
-
+    private List<String> structVars = new ArrayList<>();
     private int numReg = 0;
     private int intReg = 0;
 
@@ -39,13 +35,38 @@ public class GolangCompilerListener implements GolangListener {
 
     private boolean inForClause = false;
 
+    private boolean inStructDeclare = false;
+
+    private List<StructStatement> structStatementList = new ArrayList<>();
+
+    class StructStatement {
+        String name;
+        List<String> attrs = new ArrayList<>();
+        String varName;
+
+        StructStatement() {
+            this.varName = "$P" + numReg;
+            numReg++;
+        }
+
+        String getStructDefenition() {
+            StringBuilder ret = new StringBuilder(varName + " = newclass \'" + name + "\'\n");
+
+            for (String s: attrs) {
+                ret.append("addattribute ").append(varName).append(", \'").append(s).append("\'\n");
+            }
+
+            return ret.toString();
+        }
+    }
+
+
     class LoopStatement {
         String name;
         String counter;
         String startValue;
-        String endValue = "";
         String tempNum;
-        String tempValueBody = "";
+        String tempValueBody;
         String funcBody;
         String conditionParam;
 
@@ -291,12 +312,13 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void enterTypeDecl(GolangParser.TypeDeclContext ctx) {
-
+        this.structStatementList.add(new StructStatement());
+        this.inStructDeclare = true;
     }
 
     @Override
     public void exitTypeDecl(GolangParser.TypeDeclContext ctx) {
-
+        inStructDeclare = false;
     }
 
     @Override
@@ -306,7 +328,9 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitTypeSpec(GolangParser.TypeSpecContext ctx) {
-
+        if (inStructDeclare) {
+            structStatementList.get(structStatementList.size() - 1).name = ctx.getChild(0).getText();
+        }
     }
 
     @Override
@@ -323,6 +347,11 @@ public class GolangCompilerListener implements GolangListener {
         funcText.append(".sub ");
         funcText.append(funcName);
         funcText.append("\n");
+        if ("main".equals(funcName)) {
+            for (StructStatement structStatement: structStatementList) {
+                funcText.append(structStatement.getStructDefenition());
+            }
+        }
         funcText.append("\n");
         funcText.append(functionBodyBuilder.toString());
         functionBodyBuilder = new StringBuilder();
@@ -482,6 +511,7 @@ public class GolangCompilerListener implements GolangListener {
         if (varName == null) {
             varName = this.nodeToValue.get(ctx.getChild(0));
         }
+
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
         if (rightPart.contains("[")) {
             shorDeclaration.append("$P").append(numReg).append(" = ").append(rightPart).append("\n");
@@ -497,10 +527,27 @@ public class GolangCompilerListener implements GolangListener {
             }
         }
         if (needBox) {
-            rightPart = "box " + rightPart;
+            rightPart = " = box " + rightPart;
+        } else {
+            rightPart = " = " + rightPart;
+        }
+
+
+        for (String str: structVars) {
+            if (varName.contains(str)) {
+                String tempVar = "$P" + numReg;
+                numReg++;
+                if (rightPart.contains("nil")) {
+                    shorDeclaration.append("null ").append(tempVar).append("\n");
+                } else {
+                    shorDeclaration.append(tempVar).append(rightPart).append("\n");
+                }
+                shorDeclaration.append("setattribute ").append(varName).append(", ").append(tempVar);
+                this.nodeToValue.put(ctx, shorDeclaration.toString());
+                return;
+            }
         }
         shorDeclaration.append(varName);
-        shorDeclaration.append(" = ");
         shorDeclaration.append(rightPart);
         shorDeclaration.append("\n");
         this.nodeToValue.put(ctx, shorDeclaration.toString());
@@ -530,6 +577,7 @@ public class GolangCompilerListener implements GolangListener {
         prepares.clear();
         String leftPart = ctx.getChild(0).getText();
         String varName = this.goToParVars.get(leftPart);
+        varName = varName.replace(" ", "");
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
 
         if (inLoop && this.loops.get(this.loops.size() - 1).counter == null) {
@@ -548,10 +596,18 @@ public class GolangCompilerListener implements GolangListener {
         if (needBox) {
             rightPart = "box " + rightPart;
         }
+
+        for (StructStatement structStatement: structStatementList) {
+            if (rightPart.contains(structStatement.name)) {
+                structVars.add(varName);
+            }
+        }
+
         shorDeclaration.append(varName);
         shorDeclaration.append(" = ");
         shorDeclaration.append(rightPart);
         shorDeclaration.append("\n");
+
         this.nodeToValue.put(ctx, shorDeclaration.toString());
     }
 
@@ -1087,7 +1143,12 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitCompositeLit(GolangParser.CompositeLitContext ctx) {
-        nodeToValue.put(ctx, nodeToValue.get(ctx.getChild(1)));
+        String val = nodeToValue.get(ctx.getChild(1));
+        if (val.equals("")) {
+            this.processChilds(ctx);
+        } else {
+            nodeToValue.put(ctx, nodeToValue.get(ctx.getChild(1)));
+        }
     }
 
     @Override
@@ -1107,11 +1168,16 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitLiteralValue(GolangParser.LiteralValueContext ctx) {
-        StringBuilder arr = new StringBuilder();
-        arr.append("new \"ResizablePMCArray\"").append("\n");
-        arr.append(nodeToValue.get(ctx.getChild(1)));
-        nodeToValue.put(ctx, arr.toString());
-        goToParVars.put("new", "new");
+        if (ctx.getChildCount() != 2) {
+            StringBuilder arr = new StringBuilder();
+            arr.append("new \"ResizablePMCArray\"").append("\n");
+            arr.append(nodeToValue.get(ctx.getChild(1)));
+            nodeToValue.put(ctx, arr.toString());
+            goToParVars.put("new", "new");
+        } else {
+            goToParVars.put("new", "new");
+            nodeToValue.put(ctx, "");
+        }
     }
 
     @Override
@@ -1177,7 +1243,9 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitFieldDecl(GolangParser.FieldDeclContext ctx) {
-
+        if (inStructDeclare) {
+            structStatementList.get(structStatementList.size() - 1).attrs.add(ctx.getChild(0).getText());
+        }
     }
 
     @Override
@@ -1209,9 +1277,25 @@ public class GolangCompilerListener implements GolangListener {
     public void exitPrimaryExpr(GolangParser.PrimaryExprContext ctx) {
         StringBuilder value = new StringBuilder();
 
+        // Заполнение атрибутов структуры
+        String childValue = this.nodeToValue.get(ctx.getChild(0));
+        if (childValue == null) {
+            childValue = ctx.getChild(0).getText();
+        }
+        childValue = childValue.replaceAll(" ", "");
+        if (structVars.contains(childValue) && ctx.getChildCount() == 2) {
+            String field = this.nodeToValue.get(ctx.getChild(1));
+            if (field == null) {
+                field = ctx.getChild(1).getText();
+            }
+            field = field.replaceAll(" ", "");
+            nodeToValue.put(ctx, childValue + ", \'" + field + "\'");
+            return;
+        }
+
         for (int i = 0; i < ctx.getChildCount(); i++) {
             ParseTree child = ctx.getChild(i);
-            String childValue = this.nodeToValue.get(child);
+            childValue = this.nodeToValue.get(child);
             if (childValue == null) {
                 childValue = child.getText();
             }
@@ -1373,6 +1457,10 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void exitUnaryExpr(GolangParser.UnaryExprContext ctx) {
+        if (ctx.getChild(0).getText().equals("&")) {
+            nodeToValue.put(ctx, "new \""+nodeToValue.get(ctx.getChild(1)).replaceAll(" ", "")+"\"");
+            return;
+        }
         this.processForward(ctx);
     }
 
@@ -1398,31 +1486,6 @@ public class GolangCompilerListener implements GolangListener {
 
     @Override
     public void visitTerminal(TerminalNode terminalNode) {
-//        Token symbol = terminalNode.getSymbol();
-//        String symbolText = symbol.getText();
-//        switch(symbol.getType())
-//        {
-//            case GolangParser.INT_LIT:
-//                intValues.put(terminalNode, Integer.valueOf(symbolText));
-//                _whichValues.put(terminalNode, "Integer");
-//                break;
-//            case GolangParser.FLOAT_LIT:
-//                _floatValues.put(terminalNode, Float.valueOf(symbolText));
-//                _whichValues.put(terminalNode, "Float");
-//                break;
-//            case GolangParser.STRING_LIT:
-//                symbolText = symbolText.replaceAll("\"$", "");
-//                symbolText = symbolText.replaceAll("^\"", "");
-//                symbolText = symbolText.replaceAll("\'$", "");
-//                symbolText = symbolText.replaceAll("^\'", "");
-//                _stringValues.put(terminalNode, symbolText);
-//                _whichValues.put(terminalNode, "String");
-//                break;
-//            case GolangParser.IDENTIFIER:
-//                _stringValues.put(terminalNode, symbolText);
-//                _whichValues.put(terminalNode, "Dynamic");
-//                break;
-//        }
     }
 
     @Override
