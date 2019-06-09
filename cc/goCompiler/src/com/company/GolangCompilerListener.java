@@ -287,7 +287,7 @@ public class GolangCompilerListener implements GolangListener {
         String varName = ctx.getChild(0).getText();
         if (!goToParVars.containsKey(varName)) {
             String newParVar = "$P" + numReg;
-            if (inLoop && loops.get(loops.size() - 1).counter == null) {
+            if (inLoop && loops.get(loops.size() - 1).counter == null && inForClause) {
                 newParVar = varName;
             }
             goToParVars.put(varName, newParVar);
@@ -580,7 +580,7 @@ public class GolangCompilerListener implements GolangListener {
         varName = varName.replace(" ", "");
         String rightPart = this.nodeToValue.get(ctx.getChild(2));
 
-        if (inLoop && this.loops.get(this.loops.size() - 1).counter == null) {
+        if (inLoop && this.loops.get(this.loops.size() - 1).counter == null && inForClause) {
             this.loops.get(this.loops.size() - 1).counter = leftPart;
             this.loops.get(this.loops.size() - 1).startValue = rightPart;
             return;
@@ -603,12 +603,18 @@ public class GolangCompilerListener implements GolangListener {
             }
         }
 
+        List<String> newStructVars = new ArrayList<>();
         for (String structName: structVars) {
             if (rightPart.contains(structName)) {
+                newStructVars.add(varName);
+            }
+            if (rightPart.contains(structName) && rightPart.contains(",")) {
                 rightPart = "getattribute " + rightPart;
                 break;
             }
         }
+
+        structVars.addAll(newStructVars);
 
         shorDeclaration.append(varName);
         shorDeclaration.append(" = ");

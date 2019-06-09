@@ -18,12 +18,11 @@ func main() {
 	c.val = 3
 	c.next = b
 
-	temp := c.val
-	fmt.Println(temp)
-	c := c.next
-	temp := c.val
-	fmt.Println(temp)
-	c := c.next
-	temp := c.val
-	fmt.Println(temp)
+	temp := c
+
+	for temp.next != nil {
+		sas := temp.val
+		temp := temp.next
+		fmt.Println(sas)
+	}
 }
