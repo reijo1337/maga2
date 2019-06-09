@@ -20,7 +20,7 @@ func main() {
 
 	temp := c
 
-	for temp.next != nil {
+	for temp != nil {
 		sas := temp.val
 		temp := temp.next
 		fmt.Println(sas)

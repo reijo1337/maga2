@@ -83,15 +83,24 @@ public class GolangCompilerListener implements GolangListener {
             }
             this.name = buffer.toString();
             this.tempNum = "$P"+numReg;
-            tempValueBody = tempNum + " = new \"Integer\"\n";
             numReg++;
         }
 
+        void initTempBody() {
+            tempValueBody = tempNum + " = new \"Integer\"\n";
+        }
+
         void addTemp(String temp) {
+            if (tempValueBody == null) {
+                tempValueBody = "";
+            }
             tempValueBody += tempNum + " = " + temp + "\n";
         }
 
         String getParrotLoop() {
+            if (counter == null) {
+                return getParrotWhileLoop();
+            }
             return name + "_init:\n" +
                     "    .local pmc " + counter + "\n" +
                     "    " + counter + " = box " + startValue + "\n" +
@@ -108,6 +117,18 @@ public class GolangCompilerListener implements GolangListener {
                     "    inc "+counter+"\n" +
                     "    goto "+name+"_test\n" +
                     "\n" +
+                    "  "+name+"_end:\n";
+        }
+
+        String getParrotWhileLoop() {
+            return name + "_test:\n" +
+                    tempValueBody +
+                    "unless null "+tempNum + " goto " + name + "_body\n" +
+                    "    goto " + name + "_end\n" +
+                    "\n" +
+                    name+"_body:\n" +
+                    funcBody +"\n" +
+                    "goto " + name + "_test\n" +
                     "  "+name+"_end:\n";
         }
     }
@@ -1439,6 +1460,9 @@ public class GolangCompilerListener implements GolangListener {
             return;
         }
         if (inLoop && ctx.getChildCount() == 3 && !inIf && inForClause) {
+            if (this.loops.get(this.loops.size() - 1).tempValueBody == null) {
+                this.loops.get(this.loops.size() - 1).initTempBody();
+            }
             String child1 = nodeToValue.get(ctx.getChild(1));
             if (child1 == null)
                 child1 = ctx.getChild(1).getText();
@@ -1459,6 +1483,16 @@ public class GolangCompilerListener implements GolangListener {
                 this.loops.get(this.loops.size() - 1).addTemp(this.loops.get(this.loops.size() - 1).tempNum + " " + child1 + " " + child2);
             }
             return;
+        }
+        if (inLoop && ctx.getChildCount() == 3 && !inIf && ctx.getChild(1).getText().equals("!=")) {
+            String val = nodeToValue.get(ctx.getChild(0));
+            for (String structName: structVars) {
+                if (val.contains(structName) && val.contains(",")) {
+                    val = "getattribute " + val;
+                    break;
+                }
+            }
+            loops.get(loops.size()-1).addTemp(val);
         }
         this.processChilds(ctx);
     }
