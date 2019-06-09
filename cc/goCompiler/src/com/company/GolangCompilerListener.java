@@ -603,6 +603,13 @@ public class GolangCompilerListener implements GolangListener {
             }
         }
 
+        for (String structName: structVars) {
+            if (rightPart.contains(structName)) {
+                rightPart = "getattribute " + rightPart;
+                break;
+            }
+        }
+
         shorDeclaration.append(varName);
         shorDeclaration.append(" = ");
         shorDeclaration.append(rightPart);

@@ -36,7 +36,7 @@ if __name__ == "__main__":
             print(f'processing {a}_{size}')
             indexes.append(f'{a}_{size}')
 
-            classifier = MLPClassifier(activation=a, solver='sgd', hidden_layer_sizes=(size,), max_iter=75, random_state=3)
+            classifier = MLPClassifier(activation=a, solver='sgd', hidden_layer_sizes=(size,), max_iter=100, random_state=3)
             classifier.fit(X_train, y_train)
 
             y_pred = classifier.predict(X_test)
