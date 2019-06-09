@@ -637,11 +637,15 @@ public class GolangCompilerListener implements GolangListener {
 
         structVars.addAll(newStructVars);
 
-        shorDeclaration.append(varName);
-        shorDeclaration.append(" = ");
-        shorDeclaration.append(rightPart);
-        shorDeclaration.append("\n");
+        if (rightPart.contains("nil")) {
+            shorDeclaration.append("null ").append(varName).append("\n");
+        } else {
 
+            shorDeclaration.append(varName);
+            shorDeclaration.append(" = ");
+            shorDeclaration.append(rightPart);
+            shorDeclaration.append("\n");
+        }
         this.nodeToValue.put(ctx, shorDeclaration.toString());
     }
 
