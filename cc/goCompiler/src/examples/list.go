@@ -14,9 +14,15 @@ func main() {
 	b := &node{}
 	b.next = a
 	b.val = 5
+	d := &node{}
+	d.next = b
+	d.val = -10
+	g := &node{}
+	g.next = d
+	g.val = -20
 	c := &node{}
 	c.val = 7
-	c.next = b
+	c.next = g
 
 	temp := c
 	for temp != nil {
